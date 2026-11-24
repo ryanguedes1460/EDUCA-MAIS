@@ -1,0 +1,24 @@
+{
+  "name": "educa-mais",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Educa Mais: plataforma de estudos (PWA + Supabase).",
+  "type": "module",
+  "scripts": {
+    "conteudo": "node scripts/gerar-conteudo.mjs",
+    "build": "node scripts/build.mjs",
+    "servir": "node scripts/servidor.mjs",
+    "test": "node --test tests/unidade/*.test.mjs",
+    "test:banco": "node --test --test-concurrency=1 tests/integracao/*.test.mjs",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/*.test.mjs",
+    "test:tudo": "npm test && npm run test:banco && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.119.2",
+    "playwright": "^1.63.0",
+    "supabase": "3.3.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
