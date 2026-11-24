@@ -10,6 +10,8 @@ PostgreSQL no Supabase. A estrutura está em `supabase/migrations/` (em ordem) e
 | `..._000400_armazenamento.sql` | Locais de arquivos (imagens das questões, materiais) |
 | `..._000500_conteudo_inicial.sql` | Catálogo (5 áreas, 10 disciplinas, 46 assuntos, 6 bancas) e 25 questões. Gerado de `conteudo/` por `npm run conteudo` |
 | `..._000600_admin_questoes.sql` | Salvar questão e alternativas numa única transação |
+| `..._000700_professores.sql` | Professores: dono e visibilidade das questões, versões, turmas, listas, pedidos, funções do Ryan (1.1) |
+| `..._000800_armazenamento_professores.sql` | Imagens dos professores em pasta própria e leitura restrita (1.1) |
 
 ## Tabelas
 **Pessoas e acesso**
@@ -24,6 +26,15 @@ PostgreSQL no Supabase. A estrutura está em `supabase/migrations/` (em ordem) e
 - `questions`: código, disciplina, assunto, nível (fundamental/médio/enem/concurso), dificuldade 1–5, banca, ano, tipo (múltipla escolha, certo/errado), tema, enunciado, imagem, explicação, dica, fonte, situação (rascunho/publicada/arquivada), busca por texto (`search`, sem acento).
 - `question_options`: alternativas, com exatamente 1 correta (verificado ao final da transação).
 - `question_comments`, `materials`, `material_access_log`, `app_settings`.
+
+**Professores e turmas** (1.1)
+- `questions` ganhou `owner_id` (dono; vazio = plataforma), `visibility` (`private`, `pending_public`, `public`) e `updated_by`.
+- `question_revisions`: uma versão por alteração (foto da questão e alternativas, quem alterou, quando). Só leitura.
+- `teacher_requests` (pedido para ser professor), `correction_requests` (pedido de correção ao Ryan).
+- `classes` (turma, código de entrada, aberta/fechada, arquivada) → `class_members` (aluno, situação `active`/`left`/`removed`, `share_progress`).
+- `lists` (lista ou simulado, tempo, situação) → `list_items` (questões em ordem) → `list_assignments` (lista enviada a uma turma, abertura e prazo).
+- `exam_attempts.assignment_id`: liga a tentativa do aluno à lista recebida.
+Detalhes e regras: [SISTEMA_PROFESSORES.md](SISTEMA_PROFESSORES.md).
 
 **Estudo do aluno** (cada um só vê as próprias linhas)
 - `answers`: cada resposta (questão, alternativa, acerto **corrigido pelo servidor**, tempo, dica usada, modo, simulado). Só pode ser acrescentada, nunca alterada.
@@ -69,7 +80,7 @@ PostgreSQL no Supabase. A estrutura está em `supabase/migrations/` (em ordem) e
 4. No SQL Editor do projeto, rode o arquivo [`supabase/pos-restauracao.sql`](../supabase/pos-restauracao.sql). Ele recria o gatilho que cria o perfil no cadastro e as regras de acesso aos arquivos, que ficam fora do backup do esquema `public`. Sem este passo, novos cadastros não funcionam.
 5. Se for um projeto novo, atualize `config.js` com a URL e a chave pública dele, e refaça o passo 3 de CONFIGURACAO.md (login).
 
-Este procedimento foi testado: restauramos uma cópia num banco vazio, rodamos o pós-restauração, e os 39 testes do banco passaram (contas, respostas e questões iguais às de antes).
+Este procedimento foi testado: restauramos uma cópia num banco vazio, rodamos o pós-restauração, e os 39 testes do banco que existiam na 1.0 passaram (contas, respostas e questões iguais às de antes). O procedimento ainda não foi repetido com as migrações 7 e 8.
 
 No plano Pro, o Supabase também faz backup diário e permite voltar no tempo pelo painel (Database > Backups).
 

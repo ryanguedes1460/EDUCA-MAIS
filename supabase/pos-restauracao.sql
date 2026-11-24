@@ -1,6 +1,6 @@
 -- =====================================================================
 -- EDUCA MAIS · PÓS-RESTAURAÇÃO (gerado por scripts/build.mjs)
--- Rode no SQL Editor DEPOIS de restaurar um backup (docs/BANCO-DE-DADOS.md).
+-- Rode no SQL Editor DEPOIS de restaurar um backup (docs/BANCO_DE_DADOS.md).
 -- Recria o que fica fora do esquema "public": o gatilho que cria o perfil
 -- no cadastro e as regras de acesso aos arquivos. Pode rodar mais de uma vez.
 -- =====================================================================

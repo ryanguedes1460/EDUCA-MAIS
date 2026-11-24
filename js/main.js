@@ -10,7 +10,7 @@ import { ensureSeed } from './core/conteudo.js';
 import { migrateV02 } from './lib/migrar-v02.js';
 import { on, emit } from './core/bus.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0-dev';
 
 const NAV = [
   { id: 'inicio', name: 'Início', mobile: true },

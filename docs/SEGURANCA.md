@@ -9,9 +9,10 @@ O site (HTML/JavaScript) é público e qualquer pessoa pode ler o código. Por i
 |---|---|
 | Senhas | O app só repassa a senha direto ao Supabase por HTTPS; ela nunca é gravada no aparelho, em arquivos ou em registros. O Supabase Auth guarda apenas o hash (bcrypt). Mínimo de 8 caracteres com letras e números. |
 | Chaves | O site só tem a chave **pública** (publishable/anon), que não dá acesso a nada sozinha. O app se recusa a iniciar se alguém colocar uma chave secreta no `config.js`, e um teste automático verifica isso em todo envio. |
-| Acesso aos dados | **Row Level Security** em todas as 27 tabelas: cada aluno só lê e altera as próprias linhas. Permissões de anônimo e de usuário comum foram retiradas e concedidas tabela por tabela, coluna por coluna onde importa (ex.: o aluno não consegue mudar o próprio papel nem a situação da conta). |
+| Acesso aos dados | **Row Level Security** em todas as tabelas (35 na 1.1): cada aluno só lê e altera as próprias linhas. Permissões de anônimo e de usuário comum foram retiradas e concedidas tabela por tabela, coluna por coluna onde importa (ex.: o aluno não consegue mudar o próprio papel nem a situação da conta). |
 | Administração | Funções do servidor (`security definer`, `search_path` vazio) que conferem a permissão antes de agir e gravam **auditoria**. O primeiro admin só pode ser criado pelo SQL Editor do Supabase. |
 | Contas bloqueadas | Perdem acesso a todos os dados na hora (regra `is_active()` nas políticas) e as sessões são encerradas. |
+| Professores | Banco de questões de cada professor é privado: outro professor e os alunos não leem; o aluno só vê questões que estão numa lista enviada à turma dele. O professor não se aprova sozinho, não publica no banco geral sem o Ryan e só vê resultados de quem aceitou compartilhar. Imagens em pasta própria. Tudo conferido no banco e testado ([SISTEMA_PROFESSORES.md](SISTEMA_PROFESSORES.md)). |
 | Correção das questões | O gabarito vai para o aparelho para a correção funcionar offline, mas o resultado que fica no histórico e nas estatísticas é recalculado pelo servidor (gatilho `grade_answer`): ninguém consegue gravar um acerto falso. |
 | Injeção de SQL | Não há SQL montado com texto do usuário. O site usa a API do Supabase (consultas parametrizadas) e as funções usam parâmetros tipados. |
 | XSS (código malicioso em textos) | Todo texto do usuário passa por escape automático (`html\`...\``) e a política **CSP** proíbe scripts que não sejam do próprio site. Testado no navegador com `<script>` e `<img onerror>`. |
@@ -39,4 +40,4 @@ O site (HTML/JavaScript) é público e qualquer pessoa pode ler o código. Por i
 1. **Chave secreta vazou**: Supabase > Project Settings > API Keys > gere nova chave e revogue a antiga.
 2. **Conta suspeita**: Administração > Usuários > Bloquear (derruba as sessões). Veja a aba Auditoria.
 3. **Senha do Ryan comprometida**: "Esqueci a senha" no site, e depois Conta > Sessões > Encerrar as outras.
-4. **Dados corrompidos**: restaure o backup ([BANCO-DE-DADOS.md](BANCO-DE-DADOS.md#recuperação)).
+4. **Dados corrompidos**: restaure o backup ([BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação)).

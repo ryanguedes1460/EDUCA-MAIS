@@ -72,7 +72,7 @@ O plano grátis do Supabase não oferece backup que você possa baixar. O reposi
    - `BACKUP_PASSPHRASE`: uma frase longa que só você saiba (guarde no gerenciador de senhas: sem ela o backup não abre).
 3. Em **Actions > Backup do banco > Run workflow** rode uma vez para testar.
 
-Como restaurar está em [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md#recuperação).
+Como restaurar está em [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação).
 
 ## 8. Conferir
 - Abra o site no celular, crie uma conta de teste, confirme o e-mail, responda uma questão, e abra no computador com a mesma conta: o histórico deve aparecer.

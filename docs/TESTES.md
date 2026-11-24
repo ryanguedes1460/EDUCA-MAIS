@@ -9,10 +9,18 @@ Três níveis, todos rodados de verdade (nada simulado no lugar do banco ou do n
 | `npm run test:e2e` | Navegador Chromium real contra o Supabase local, com e-mails de verdade (Mailpit) | O mesmo + Playwright |
 | `npm run test:tudo` | Os três em sequência | |
 
-O workflow `.github/workflows/testes.yml` roda os três a cada envio para o GitHub.
+O workflow `.github/workflows/testes.yml` foi feito para rodar os três a cada envio, mas **até 24/11/2026 ele nunca rodou** no GitHub (o GitHub Actions parece estar desligado no repositório). Os resultados abaixo são de execuções feitas no ambiente de desenvolvimento.
 
-## Resultado da última execução (24/11/2026)
-**69 de 69 aprovados** (Node 22.23, Supabase CLI 3.3.0, Playwright 1.63, Chromium).
+## Resultado da última execução (24/11/2026, versão 1.1 em desenvolvimento)
+**83 de 83 aprovados**: 18 de lógica, 49 de banco e 16 no navegador (Node 22, Supabase CLI 3.3.0, Playwright 1.63, Chromium).
+
+### Novos na 1.1: professores (10 de banco, 4 no navegador)
+Banco: ninguém vira professor sozinho e o Ryan aprova; questão do professor nasce privada e outro professor/aluno não vê, não altera e não apaga; professor não troca o dono nem publica pela API; Ryan corrige o banco de qualquer professor com versão e autor registrados; turma por código e outro professor não enxerga; lista só aceita questões próprias ou do banco geral e o aluno da turma recebe e responde (aluno de fora não); professor vê só quem compartilha e não liga isso pelo aluno, aluno removido não volta sozinho; pedidos de correção e envio ao banco geral passam pelo Ryan; duplicadas, lista de professores e questão respondida não é apagada; imagens na pasta própria com leitura restrita.
+
+Navegador: pedido para ser professor e aprovação pelo Ryan; professora cria questão privada, turma e lista e envia; aluno entra pelo código, faz a lista e o resultado chega à professora (e some quando o aluno desliga o compartilhamento); lista aberta com internet é feita sem internet e sincroniza depois.
+
+### Resultado da 1.0
+**69 de 69 aprovados**.
 
 ### Lógica: 18/18
 Revisão espaçada (5), estatísticas do painel (4), sincronização (4), proteção da interface (2), conteúdo e empacotamento (3).
@@ -42,10 +50,10 @@ Revisão espaçada (5), estatísticas do painel (4), sincronização (4), prote�
 Os testes de navegador encontraram e ajudaram a corrigir 2 falhas reais: anotações perdiam o título quando o texto era digitado logo em seguida, e "Sair" avisava pendências que seriam enviadas em segundos.
 
 ### Backup e recuperação
-Testado manualmente no banco local: cópia gerada com os mesmos comandos do `backup.yml`, restaurada num banco vazio com o procedimento de [BANCO-DE-DADOS.md](BANCO-DE-DADOS.md#recuperação), seguida de `pos-restauracao.sql`. Contagens iguais às de antes e os 39 testes do banco passaram no banco restaurado.
+Testado manualmente no banco local: cópia gerada com os mesmos comandos do `backup.yml`, restaurada num banco vazio com o procedimento de [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação), seguida de `pos-restauracao.sql`. Contagens iguais às de antes e os 39 testes do banco passaram no banco restaurado.
 
 ## O que não foi testado aqui
-- O projeto Supabase de produção (ainda não existe: depende da configuração em [CONFIGURACAO.md](CONFIGURACAO.md)). Os testes usam o mesmo software rodando localmente.
+- O projeto Supabase real (`dvzmcvuvpcnfcxjnmvev`), que hoje roda a versão 0.3: o ambiente de desenvolvimento não consegue acessá-lo, e nada da 1.x foi instalado nele. Os testes usam o mesmo software rodando localmente.
 - Envio de e-mail por SMTP real (os testes usam o Mailpit local).
 - Turnstile (precisa das chaves da Cloudflare).
 - Safari/iPhone e Firefox: só Chromium foi automatizado. Recomenda-se abrir o site num iPhone após publicar.

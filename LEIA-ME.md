@@ -1,4 +1,4 @@
-# Educa Mais: plataforma de estudos (versão 1.0)
+# Educa Mais: plataforma de estudos (versão 1.1 em desenvolvimento)
 
 Plataforma de estudos para ENEM, ensino fundamental e médio (e concursos), que funciona **online e offline** no computador, no tablet e no celular.
 
@@ -13,6 +13,8 @@ Endereço público: https://ryanguedes1460.github.io/educa-mais/
 - **Desempenho**: sequência de dias, acerto por disciplina, assuntos com dificuldade, gráficos de tempo e evolução. Nada é inventado: tudo vem das suas respostas.
 - **Aparência**: temas, cores, estilo dos cartões, densidade, tamanho da letra e modo de tela (automático, computador, tablet ou celular). Fica salvo na conta.
 - **Conta**: cadastro com confirmação por e-mail, entrar, sair, recuperar e alterar senha, ver e encerrar sessões em outros aparelhos, baixar todos os seus dados, apagar o histórico ou a conta.
+- **Professores**: banco de questões próprio e privado, listas e simulados, turmas com código, resultados de quem aceitou compartilhar.
+- **Minhas turmas** (aluno): entrar pelo código e fazer as listas do professor, inclusive sem internet.
 - **Painel do administrador (Ryan)**: estatísticas gerais, usuários (bloquear, desbloquear, mudar papel), editor de questões com imagem, matérias e categorias, materiais protegidos, moderação de comentários, configurações gerais, permissões e registro de auditoria.
 
 ## Situação atual
@@ -21,14 +23,17 @@ Sem configuração, o site funciona em **modo local**: tudo fica só no aparelho
 ## Documentação
 | Arquivo | Para quê |
 |---|---|
+| [docs/DOCUMENTACAO_GERAL.md](docs/DOCUMENTACAO_GERAL.md) | **Comece aqui**: versões, o que está pronto e o que falta |
 | [docs/CONFIGURACAO.md](docs/CONFIGURACAO.md) | Passo a passo para colocar tudo no ar (Supabase, e-mail, admin) |
-| [docs/ADMINISTRACAO.md](docs/ADMINISTRACAO.md) | Como o Ryan usa o painel |
+| [docs/SISTEMA_ADMINISTRATIVO.md](docs/SISTEMA_ADMINISTRATIVO.md) | Como o Ryan usa o painel |
+| [docs/SISTEMA_PROFESSORES.md](docs/SISTEMA_PROFESSORES.md) | Área do professor |
+| [docs/SISTEMA_ALUNOS.md](docs/SISTEMA_ALUNOS.md) | O que o aluno faz e Minhas turmas |
 | [docs/SEGURANCA.md](docs/SEGURANCA.md) | Como os dados são protegidos e os limites honestos |
-| [docs/BANCO-DE-DADOS.md](docs/BANCO-DE-DADOS.md) | Tabelas, relações, backup e recuperação |
+| [docs/BANCO_DE_DADOS.md](docs/BANCO_DE_DADOS.md) | Tabelas, relações, backup e recuperação |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Como o app é organizado por dentro |
 | [docs/MANUTENCAO.md](docs/MANUTENCAO.md) | Atualizar o app, adicionar questões, rotina de cuidados |
 | [docs/TESTES.md](docs/TESTES.md) | Testes automáticos e resultados |
-| [CHANGELOG.md](CHANGELOG.md) | O que mudou em cada versão |
+| [docs/HISTORICO_DE_ALTERACOES.md](docs/HISTORICO_DE_ALTERACOES.md) | O que mudou em cada versão |
 
 ## Serviços externos
 | Serviço | Uso | Custo |
