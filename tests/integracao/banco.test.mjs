@@ -371,3 +371,41 @@ describe('dados pessoais (LGPD)', () => {
     if (admins === 1) assert.ok((await ryan.client.rpc('delete_my_account')).error);
   });
 });
+
+describe('editor de questões do administrador', () => {
+  test('salva questão e alternativas numa só transação; troca a correta de uma publicada', async () => {
+    const q = { subject_id: 3, topic_id: 2, level: 'enem', difficulty: 2, statement: 'Quanto é 3 + 3?', explanation: '3 + 3 = 6.', status: 'published' };
+    const { data: id, error } = await ryan.client.rpc('admin_save_question', { p_question: q, p_options: [{ body: '5' }, { body: '6', is_correct: true }, { body: '7' }] });
+    assert.ifError(error);
+    const { data: opts } = await ryan.client.from('question_options').select('id, position, body, is_correct').eq('question_id', id).order('position');
+    assert.equal(opts.length, 3);
+    // inverte a ordem e muda a correta, removendo uma alternativa
+    const r = await ryan.client.rpc('admin_save_question', { p_question: { ...q, id }, p_options: [{ id: opts[2].id, body: '7', is_correct: true }, { id: opts[1].id, body: '6' }] });
+    assert.ifError(r.error);
+    const { data: after } = await ryan.client.from('question_options').select('id, position, is_correct').eq('question_id', id).order('position');
+    assert.deepEqual(after.map(o => [o.id, o.is_correct]), [[opts[2].id, true], [opts[1].id, false]]);
+    const { data: qq } = await ryan.client.from('questions').select('code').eq('id', id).single();
+    assert.match(qq.code, /^Q-[0-9A-F]{8}$/);
+  });
+
+  test('publicar sem alternativa correta é recusado e nada é gravado', async () => {
+    const r = await ryan.client.rpc('admin_save_question', { p_question: { subject_id: 3, level: 'enem', statement: 'Questão sem gabarito?', explanation: 'Sem gabarito.', status: 'published' }, p_options: [{ body: 'a' }, { body: 'b' }] });
+    assert.ok(r.error);
+    const { data } = await ryan.client.from('questions').select('id').eq('statement', 'Questão sem gabarito?');
+    assert.equal(data.length, 0);
+  });
+
+  test('aluno não usa o editor de questões', async () => {
+    const r = await ana.client.rpc('admin_save_question', { p_question: { subject_id: 3, level: 'enem', statement: 'Hack?', explanation: 'x.', status: 'draft' }, p_options: [{ body: 'a', is_correct: true }, { body: 'b' }] });
+    assert.ok(r.error);
+  });
+
+  test('questão já respondida não pode ser apagada (deve ser arquivada)', async () => {
+    const d = await ryan.client.from('questions').delete().eq('id', Q1);
+    assert.ok(d.error);
+    assert.ifError((await ryan.client.from('questions').update({ status: 'archived' }).eq('id', Q1)).error);
+    const seen = await ana.client.from('questions').select('id').eq('id', Q1);
+    assert.equal(seen.data.length, 0);
+    await ryan.client.from('questions').update({ status: 'published' }).eq('id', Q1);
+  });
+});

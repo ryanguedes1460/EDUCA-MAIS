@@ -164,7 +164,7 @@ create table public.question_options (
   body        text not null check (char_length(body) between 1 and 2000),
   is_correct  boolean not null default false,
   updated_at  timestamptz not null default now(),
-  unique (question_id, position)
+  constraint question_options_position_key unique (question_id, position) deferrable initially deferred
 );
 create index question_options_q_idx on public.question_options (question_id);
 
@@ -200,7 +200,7 @@ create index exam_attempts_user_idx on public.exam_attempts (user_id, synced_at)
 create table public.answers (
   id              uuid primary key,
   user_id         uuid not null default auth.uid() references public.profiles (id) on delete cascade,
-  question_id     uuid not null references public.questions (id) on delete cascade,
+  question_id     uuid not null references public.questions (id) on delete restrict,  -- questão respondida deve ser arquivada, não apagada
   option_id       uuid references public.question_options (id) on delete set null,
   is_correct      boolean not null default false,   -- calculado pelo servidor (gatilho)
   time_spent_ms   integer check (time_spent_ms between 0 and 7200000),
