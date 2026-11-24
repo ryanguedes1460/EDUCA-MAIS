@@ -19,6 +19,8 @@ export default {
       let sessions = [];
       if (auth.isLogged() && navigator.onLine) sessions = await auth.listLoginSessions().catch(() => []);
       const curSession = auth.currentLoginSessionId();
+      let treq = null;
+      if (auth.isLogged() && navigator.onLine && !auth.can('teacher.area')) treq = (await sb.from('teacher_requests').select('status, note, created_at').eq('user_id', auth.state.user.id).maybeSingle()).data;
       const counts = {};
       for (const t of ['answers', 'flashcards', 'notes', 'flashcard_reviews', 'study_sessions']) counts[t] = (await store.all(t)).length;
 
@@ -42,6 +44,14 @@ export default {
             <div class="row"><button class="btn ghost sm" type="button" data-action="others">Encerrar outros aparelhos</button><button class="btn ghost sm" type="button" data-action="global">Sair de todos os aparelhos</button></div>
           </div>
         </div>`}
+        ${auth.isLogged() ? html`<div class="card stack" id="professor"><h2>Área do professor</h2>
+          ${auth.can('teacher.area') ? html`<p>Sua conta de professor está ativa.</p><div><a class="btn sm" href="#professor">Abrir a área do professor</a></div>`
+          : !navigator.onLine ? html`<p class="muted small">Conecte-se à internet para ver ou fazer o pedido.</p>`
+          : treq?.status === 'pending' ? html`<p>Seu pedido foi enviado em ${fmtDateTime(treq.created_at)} e aguarda a aprovação do administrador.</p>`
+          : html`${treq?.status === 'rejected' ? html`<p class="err small">Pedido anterior não aprovado${treq.note ? `: ${treq.note}` : '.'} Você pode enviar de novo.</p>` : ''}
+            <p class="small">Professores montam o próprio banco de questões (privado), criam listas e simulados e acompanham suas turmas. A liberação é feita pelo administrador.</p>
+            <div><button class="btn ghost sm" type="button" data-action="askTeacher">Quero ser professor</button></div>`}
+        </div>` : ''}
         <div class="grid g2">
           <div class="card stack" id="dados"><h2>Sincronização</h2>
             <p>${!auth.isLogged() ? 'Sem conta: nada é enviado para a nuvem.' : pending ? `${pending} alteração(ões) aguardando envio.` : 'Tudo enviado para a sua conta.'}</p>
@@ -80,6 +90,15 @@ export default {
     };
 
     actions(el, {
+      async askTeacher() {
+        const fd = await formDialog('Pedido para ser professor', html`<label class="f">Disciplinas que você ensina<input class="input" name="subjects" maxlength="300" required placeholder="Ex.: Matemática e Física"></label>
+          <label class="f">Conte um pouco sobre você (escola, turmas)<textarea class="input" name="message" rows="3" maxlength="1000"></textarea></label>
+          <p class="muted small">O administrador vê seu nome, seu e-mail e o que você escrever aqui.</p>`, { ok: 'Enviar pedido', validate: async f => {
+            const { error } = await sb.rpc('request_teacher', { p_message: String(f.get('message') || ''), p_subjects: String(f.get('subjects') || '') });
+            return error ? friendlyError(error) : null;
+          } });
+        if (fd) { toast('Pedido enviado'); draw(); }
+      },
       async logout() {
         // antes de sair, tenta enviar o que ainda falta
         if (navigator.onLine) await sync.syncNow().catch(() => {});

@@ -45,7 +45,7 @@ export default {
 
       const blocks = {
         continuar: html`<div class="card stack"><h3>Continuar de onde parou</h3>
-          ${openAttempt ? html`<a class="item-btn" href="#questoes/simulado/${openAttempt.id}"><span><b>Simulado em andamento</b><span class="muted small">Começou em ${new Date(openAttempt.started_at).toLocaleString('pt-BR')}</span></span><span class="chip on">Continuar</span></a>` : ''}
+          ${openAttempt ? html`<a class="item-btn" href="${openAttempt.assignment_id ? `#questoes/lista/${openAttempt.assignment_id}` : `#questoes/simulado/${openAttempt.id}`}"><span><b>${openAttempt.assignment_id ? 'Lista do professor em andamento' : 'Simulado em andamento'}</b><span class="muted small">Começou em ${new Date(openAttempt.started_at).toLocaleString('pt-BR')}</span></span><span class="chip on">Continuar</span></a>` : ''}
           ${due ? html`<a class="item-btn" href="#flashcards"><span><b>${plural(due, 'flashcard para revisar', 'flashcards para revisar')}</b><span class="muted small">Revise agora para não esquecer</span></span><span class="chip on">Revisar</span></a>` : ''}
           ${lastQ ? html`<a class="item-btn" href="#questoes"><span><b>Última questão: ${cat.subject(lastQ.subject_id)?.name || ''}</b><span class="muted small">${lastQ.statement.slice(0, 90)}${lastQ.statement.length > 90 ? '…' : ''}</span></span><span class="chip">Mais questões</span></a>` : ''}
           ${s.last_view && VIEW_NAMES[s.last_view] ? html`<a class="item-btn" href="#${s.last_view}"><span><b>Voltar para ${VIEW_NAMES[s.last_view]}</b><span class="muted small">Última tela que você usou</span></span><span class="chip">Abrir</span></a>` : ''}

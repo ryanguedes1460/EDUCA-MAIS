@@ -24,7 +24,7 @@ function applyFilters(cat, answers, favs) {
   const favSet = new Set(favs.map(f => f.id));
   const topicSet = filters.topic ? descendants(cat.topics, +filters.topic) : null;
   const terms = norm(filters.q).split(/\s+/).filter(Boolean);
-  return cat.questions.filter(q => {
+  return cat.bank.filter(q => {
     const s = cat.subject(q.subject_id);
     if (filters.area && s?.area_id !== +filters.area) return false;
     if (filters.subject && q.subject_id !== +filters.subject) return false;
@@ -76,14 +76,37 @@ async function wrongToFlashcard(q) {
 export default {
   title: 'Questões',
   async render(el, params, ctx) {
-    const cat = await catalog();
+    let cat = await catalog();
+    // Retoma uma tentativa guardada (simulado ou lista do professor)
+    const resume = async (att, mode, extra = {}) => {
+      const answered = (await store.all('answers')).filter(a => a.exam_attempt_id === att.id);
+      const qs = att.filters.ids.map(id => cat.question(id)).filter(Boolean);
+      if (!qs.length) return false;
+      const res = qs.map(q => { const a = answered.find(x => x.question_id === q.id); return a ? a.is_correct : undefined; });
+      const first = res.findIndex(x => x === undefined);
+      run = { mode, attempt: att, qs, i: first < 0 ? qs.length - 1 : first, res, t0: new Date(att.started_at).getTime(), tq: Date.now(), active: 0, ...extra };
+      return true;
+    };
     if (params[0] === 'simulado' && params[1]) {
       const att = await store.get('exam_attempts', params[1]);
-      if (att && !att.finished_at && att.filters?.ids) {
-        const answered = (await store.all('answers')).filter(a => a.exam_attempt_id === att.id);
-        const qs = att.filters.ids.map(id => cat.question(id)).filter(Boolean);
-        run = { mode: 'simulado', attempt: att, qs, i: Math.min(answered.length, qs.length - 1), res: qs.map(q => { const a = answered.find(x => x.question_id === q.id); return a ? a.is_correct : undefined; }), t0: new Date(att.started_at).getTime(), tq: Date.now(), active: 0 };
-        if (answered.length >= qs.length) run.i = qs.length - 1;
+      if (att && !att.finished_at && att.filters?.ids) await resume(att, 'simulado');
+    } else if (params[0] === 'lista' && params[1]) {
+      run = null;
+      const back = msg => { setHTML(el, html`<div class="card stack"><h1>Lista</h1><p>${msg}</p><div><a class="btn" href="#turmas">Voltar para Minhas turmas</a></div></div>`); };
+      const asg = (await store.meta.get('turmas:cache', { assignments: [] })).assignments.find(a => a.assignment_id === params[1]);
+      if (!asg) return back('Esta lista não está disponível neste aparelho. Abra Minhas turmas com internet para baixá-la.');
+      let ids = await store.meta.get('list:' + asg.list_id, null);
+      if (!ids && navigator.onLine) { try { await (await import('./turmas.js')).cacheLists([asg]); cat = await catalog(); ids = await store.meta.get('list:' + asg.list_id, null); } catch (e) { return back(friendlyError(e)); } }
+      if (!ids || !ids.length) return back('As questões desta lista ainda não foram baixadas. Abra Minhas turmas com internet.');
+      const mode = asg.mode === 'simulado' ? 'simulado' : 'pratica';
+      const extra = { assignment: asg, limitMs: asg.time_limit_min ? asg.time_limit_min * 60e3 : 0 };
+      const open = (await store.all('exam_attempts')).find(x => x.assignment_id === asg.assignment_id && !x.finished_at);
+      if (!(open && await resume(open, mode, extra))) {
+        const qs = ids.map(id => cat.question(id)).filter(Boolean);
+        if (!qs.length) return back('As questões desta lista não estão mais disponíveis.');
+        const att = await store.put('exam_attempts', { title: asg.title.slice(0, 120), filters: { ids: qs.map(q => q.id), lista: asg.list_id }, total: qs.length, correct: 0, started_at: nowISO(), finished_at: null, assignment_id: asg.assignment_id });
+        const t = Date.now();
+        run = { mode, attempt: att, qs, i: 0, res: [], t0: t, tq: t, active: 0, ...extra };
       }
     } else if (params[0] !== 'run') run = null;
 
@@ -97,8 +120,8 @@ export default {
       const pages = Math.max(1, Math.ceil(res.length / PAGE)); page = Math.min(page, pages - 1);
       const subs = cat.subjects.filter(s => !filters.area || s.area_id === +filters.area);
       const tops = cat.topics.filter(t => filters.subject && t.subject_id === +filters.subject);
-      const years = [...new Set(cat.questions.map(q => q.year).filter(Boolean))].sort((a, b) => b - a);
-      const usedBoards = new Set(cat.questions.map(q => q.board_id));
+      const years = [...new Set(cat.bank.map(q => q.year).filter(Boolean))].sort((a, b) => b - a);
+      const usedBoards = new Set(cat.bank.map(q => q.board_id));
       const nSim = Math.min(res.length, +(settings?.questoes_por_simulado) || 10);
       const sel = (name, label, opts, value) => html`<label class="f">${label}<select class="input" data-onchange="filter" name="${name}"><option value="">Todos</option>${opts.map(([v, t]) => html`<option value="${v}" ${String(value) === String(v) ? 'selected' : ''}>${t}</option>`)}</select></label>`;
       const topicLabel = t => (t.parent_id ? '— ' : '') + t.name;
@@ -106,7 +129,7 @@ export default {
 
       setHTML(el, html`<div class="stack" style="gap:var(--gap)">
         <div class="head"><div><span class="eyebrow">Banco de questões</span><h1>Questões</h1>
-          <p>${plural(cat.questions.length, 'questão disponível', 'questões disponíveis')}. Erros viram flashcards automaticamente para você revisar.</p></div></div>
+          <p>${plural(cat.bank.length, 'questão disponível', 'questões disponíveis')}. Erros viram flashcards automaticamente para você revisar.</p></div></div>
         <div class="split">
           <form class="card stack sticky" id="filters" role="search" aria-label="Filtros de questões">
             <label class="f">Buscar<input class="input" type="search" name="q" value="${filters.q}" placeholder="Ex.: crase, juros, Newton" data-oninput="search"></label>
@@ -164,7 +187,7 @@ export default {
       const letters = 'ABCDEF';
       setHTML(el, html`<div class="stack" style="gap:var(--gap)">
         <div class="row between"><div class="dots" aria-label="Progresso">${run.qs.map((_, i) => html`<span class="${i === run.i ? 'cur' : ''} ${run.res[i] === true ? 'ok' : run.res[i] === false ? 'no' : ''}">${i + 1}</span>`)}</div>
-          <span class="chip num" id="clock" aria-label="Tempo">${run.mode === 'simulado' ? 'Simulado' : 'Prática'} · 00:00</span></div>
+          <span class="chip num" id="clock" aria-label="Tempo"></span></div>
         <article class="card" aria-labelledby="qText">
           <div class="row between" style="align-items:flex-start"><div class="q-meta"><span class="chip on">${s?.name || ''}</span>${tp ? html`<span class="chip">${tp.name}</span>` : ''}<span class="chip">${LEVELS[q.level]}</span><span class="chip">${DIFFICULTY[q.difficulty]}</span>${b ? html`<span class="chip">${b.name}${q.year ? ' · ' + q.year : ''}</span>` : ''}</div>
             <button type="button" class="star" data-action="fav" data-id="${q.id}" aria-pressed="${fav}" aria-label="${fav ? 'Remover dos favoritos' : 'Favoritar'}">${fav ? '★' : '☆'}</button></div>
@@ -182,7 +205,14 @@ export default {
         <section class="card stack" id="comments" hidden aria-label="Comentários"></section>
       </div>`);
       stopTimer();
-      timer = setInterval(() => { const sec = Math.floor((Date.now() - run.t0) / 1000); const c = $('#clock', el); if (c) c.textContent = `${run.mode === 'simulado' ? 'Simulado' : 'Prática'} · ${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`; }, 500);
+      const label = run.assignment ? (run.mode === 'simulado' ? 'Simulado do professor' : 'Lista do professor') : run.mode === 'simulado' ? 'Simulado' : 'Prática';
+      const tick = () => {
+        if (!run) return stopTimer();
+        const ms = Date.now() - run.t0, sec = Math.floor((run.limitMs ? Math.max(0, run.limitMs - ms) : ms) / 1000);
+        const c = $('#clock', el); if (c) c.textContent = `${label} · ${run.limitMs ? 'restam ' : ''}${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+        if (run.limitMs && ms >= run.limitMs) { toast('O tempo acabou. As questões sem resposta contam como erradas.', 4000); drawResult(); }
+      };
+      tick(); timer = setInterval(tick, 500);
       if (q.image_path) imageUrl(q.image_path).then(u => { const box = $('#qImg', el); if (u && box) setHTML(box, html`<img class="q-img" src="${u}" alt="${q.image_alt || 'Imagem da questão'}">`); });
       if (run.answered) { // simulado retomado: mostra a correção já registrada
         const ans = (await store.all('answers')).find(a => a.question_id === q.id && a.exam_attempt_id === run.attempt?.id);
@@ -229,14 +259,15 @@ export default {
       const weak = Object.entries(bySubj).filter(([, [a, b]]) => a < b).map(([s]) => s);
       if (run.attempt) await store.patch('exam_attempts', run.attempt.id, { finished_at: nowISO(), correct: ok, total: n });
       await saveSession();
-      history.replaceState(null, '', '#questoes');
+      const fromList = !!run.assignment;
+      history.replaceState(null, '', '#questoes'); // o link "Voltar para Minhas turmas" muda o endereço e abre a tela
       setHTML(el, html`<div class="card stack" style="text-align:center;justify-items:center;padding:32px">
         <span class="eyebrow">Resultado ${run.mode === 'simulado' ? 'do simulado' : 'da prática'}</span>
         <div style="font-family:var(--f-display);font-size:3.2rem;font-weight:800" class="num">${ok}/${n}</div>
         <p class="muted num">${Math.round(ok / n * 100)}% de acerto em ${Math.floor(secs / 60)} min ${secs % 60} s</p>
         <div style="width:min(440px,100%);text-align:left" class="stack">${Object.entries(bySubj).map(([s, [a, b]]) => html`<div><div class="row between small"><span>${s}</span><span class="num muted">${a}/${b}</span></div><div class="bar"><i style="width:${Math.round(a / b * 100)}%;background:${raw(a === b ? 'var(--good)' : a === 0 ? 'var(--bad)' : 'var(--warn)')}"></i></div></div>`)}</div>
         <p style="max-width:56ch">${weak.length ? html`Vale reforçar <b>${weak.join(', ')}</b>. As questões erradas viraram flashcards no baralho <b>Questões que errei</b>.` : 'Mandou muito bem! Tente outro nível para se desafiar.'}</p>
-        <div class="row" style="justify-content:center"><button class="btn" type="button" data-action="back">Voltar ao banco</button>${weak.length ? html`<a class="btn ghost" href="#flashcards">Revisar meus erros</a>` : ''}<a class="btn ghost" href="#desempenho">Ver desempenho</a></div></div>`);
+        <div class="row" style="justify-content:center">${fromList ? html`<a class="btn" href="#turmas">Voltar para Minhas turmas</a>` : html`<button class="btn" type="button" data-action="back">Voltar ao banco</button>`}${weak.length ? html`<a class="btn ghost" href="#flashcards">Revisar meus erros</a>` : ''}<a class="btn ghost" href="#desempenho">Ver desempenho</a></div></div>`);
       run = null;
     }
 
@@ -281,11 +312,14 @@ export default {
       },
       next() { if (run.i < run.qs.length - 1) { run.i++; drawQuestion(); } else drawResult(); },
       async quit() {
-        if (run?.mode === 'simulado' && run.res.filter(x => x !== undefined).length < run.qs.length) {
-          const ok = await confirmDialog('Sair do simulado? Você pode continuar depois pela tela Início.', { ok: 'Sair' });
+        if (run?.attempt && run.res.filter(x => x !== undefined).length < run.qs.length) {
+          const ok = await confirmDialog(run.assignment ? 'Sair da lista? Você pode continuar depois em Minhas turmas.' : 'Sair do simulado? Você pode continuar depois pela tela Início.', { ok: 'Sair' });
           if (!ok) return;
         }
-        await saveSession(); run = null; history.replaceState(null, '', '#questoes'); drawBank();
+        const fromList = !!run?.assignment;
+        await saveSession(); run = null;
+        if (fromList) { location.hash = '#turmas'; return; }
+        history.replaceState(null, '', '#questoes'); drawBank();
       },
       back() { drawBank(); },
       async delComment(b) {

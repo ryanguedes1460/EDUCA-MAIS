@@ -22,7 +22,7 @@ export const USER_TABLES = {
     kind: 'mutable', conflict: 'user_id,question_id', cols: ['question_id', 'created_at', 'updated_at', 'deleted_at'],
     toRemote: r => ({ ...r, question_id: r.id }), fromRemote: r => ({ ...r, id: r.question_id })
   },
-  exam_attempts: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'filters', 'total', 'correct', 'started_at', 'finished_at', 'updated_at', 'deleted_at'] },
+  exam_attempts: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'filters', 'total', 'correct', 'started_at', 'finished_at', 'assignment_id', 'updated_at', 'deleted_at'] },
   answers: { kind: 'append', conflict: 'id', cols: ['id', 'question_id', 'option_id', 'time_spent_ms', 'used_hint', 'mode', 'exam_attempt_id', 'answered_at'] },
   study_sessions: { kind: 'append', conflict: 'id', cols: ['id', 'kind', 'subject', 'started_at', 'duration_sec'] }
 };

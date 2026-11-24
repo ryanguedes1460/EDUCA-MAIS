@@ -51,7 +51,9 @@ export function renderInstaller() {
  *  não leva o gatilho em auth.users nem as políticas do Storage. */
 export function renderPostRestore() {
   const dir = join(ROOT, 'supabase', 'migrations');
-  const storage = readFileSync(join(dir, '20261124000400_armazenamento.sql'), 'utf8')
+  const storage = readdirSync(dir).filter(f => /armazenamento.*\.sql$/.test(f)).sort()
+    .map(f => readFileSync(join(dir, f), 'utf8')).join('\n')
+    .replace(/drop policy if exists "[^"]+" on storage\.objects;\n/g, '')
     .replace(/create policy ("[^"]+") on storage\.objects/g, 'drop policy if exists $1 on storage.objects;\ncreate policy $1 on storage.objects');
   return `-- =====================================================================
 -- EDUCA MAIS · PÓS-RESTAURAÇÃO (gerado por scripts/build.mjs)

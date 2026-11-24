@@ -187,4 +187,19 @@ describe('professores e bancos individuais', () => {
     const d1 = await profB.client.from('questions').delete().eq('id', qNew).select();
     assert.equal(d1.data.length, 1, 'professor apaga questão própria sem respostas');
   });
+  test('imagens: professor envia só na própria pasta; imagem privada só para quem vê a questão', async () => {
+    const png = new Blob([Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0])], { type: 'image/png' });
+    const mine = `t/${profA.id}/${uuid()}.png`;
+    assert.ifError((await profA.client.storage.from('question-images').upload(mine, png, { contentType: 'image/png' })).error);
+    assert.ok((await profA.client.storage.from('question-images').upload(`t/${profB.id}/${uuid()}.png`, png, { contentType: 'image/png' })).error, 'não grava na pasta de outro professor');
+    assert.ok((await profA.client.storage.from('question-images').upload(`q/${uuid()}.png`, png, { contentType: 'image/png' })).error, 'pasta da equipe é só da equipe');
+    assert.ok((await aluno.client.storage.from('question-images').upload(`t/${aluno.id}/${uuid()}.png`, png, { contentType: 'image/png' })).error, 'aluno não envia imagens');
+
+    const { data: qi } = await profA.client.rpc('save_question', { p_question: question('Questão privada com imagem', { image_path: mine }), p_options: opts() });
+    assert.ok(qi);
+    assert.ifError((await profA.client.storage.from('question-images').download(mine)).error, 'dono lê');
+    assert.ifError((await ryan.client.storage.from('question-images').download(mine)).error, 'Ryan lê');
+    assert.ok((await profB.client.storage.from('question-images').download(mine)).error, 'outro professor não lê');
+    assert.ok((await outro.client.storage.from('question-images').download(mine)).error, 'aluno sem a lista não lê');
+  });
 });

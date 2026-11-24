@@ -25,6 +25,8 @@ export async function catalog() {
   const published = questions.filter(q => q.status === 'published').sort((a, b) => (a.code || '').localeCompare(b.code || ''));
   cache = {
     areas, subjects, topics, boards, questions: published,
+    // banco geral (o que aparece na tela Questões); questões de listas dos professores ficam fora
+    bank: published.filter(q => !q.visibility || q.visibility === 'public'),
     subject: id => subjects.find(s => s.id === id), topic: id => topics.find(t => t.id === id),
     board: id => boards.find(b => b.id === id), area: id => areas.find(a => a.id === id),
     question: id => published.find(q => q.id === id)

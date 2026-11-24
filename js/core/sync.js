@@ -106,7 +106,7 @@ export async function pullContent() {
   let cursor = await store.meta.get('cur:questions', '1970-01-01T00:00:00Z');
   for (;;) {
     const { data, error } = await sb.from('questions')
-      .select('id, code, subject_id, topic_id, level, difficulty, board_id, year, qtype, theme, statement, image_path, image_alt, explanation, hint, source, status, updated_at, question_options(id, question_id, position, body, is_correct)')
+      .select('id, code, subject_id, topic_id, level, difficulty, board_id, year, qtype, theme, statement, image_path, image_alt, explanation, hint, source, status, visibility, updated_at, question_options(id, question_id, position, body, is_correct)')
       .eq('status', 'published').gt('updated_at', cursor).order('updated_at').limit(500);
     if (error) throw error;
     if (!data.length) break;

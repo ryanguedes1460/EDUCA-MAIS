@@ -3,7 +3,7 @@
 -- Como usar: Supabase > SQL Editor > New query > cole TODO este arquivo > Run.
 -- Rode UMA vez, num projeto novo. Para atualizações futuras, rode só as
 -- migrações novas (veja docs/MANUTENCAO.md).
--- Arquivos incluídos: 20261124000100_estrutura.sql, 20261124000200_funcoes.sql, 20261124000300_seguranca_rls.sql, 20261124000400_armazenamento.sql, 20261124000500_conteudo_inicial.sql, 20261124000600_admin_questoes.sql, 20261125000700_professores.sql
+-- Arquivos incluídos: 20261124000100_estrutura.sql, 20261124000200_funcoes.sql, 20261124000300_seguranca_rls.sql, 20261124000400_armazenamento.sql, 20261124000500_conteudo_inicial.sql, 20261124000600_admin_questoes.sql, 20261125000700_professores.sql, 20261125000800_armazenamento_professores.sql
 -- =====================================================================
 
 -- >>>>>>>>>> 20261124000100_estrutura.sql
@@ -2295,3 +2295,31 @@ begin
   end loop;
 end $$;
 revoke execute on function public.snapshot_question(uuid) from authenticated;
+
+
+-- >>>>>>>>>> 20261125000800_armazenamento_professores.sql
+-- =====================================================================
+-- Educa Mais · Migração 8: imagens das questões dos professores
+--   Cada professor envia imagens só para a própria pasta t/<id do professor>/.
+--   Imagens de questões privadas só são lidas por quem pode ver a questão
+--   (o dono, a equipe ou alunos de turmas que receberam a lista).
+--   As imagens da equipe (pasta q/) continuam como antes.
+-- =====================================================================
+
+drop policy if exists "imagens: leitura para logados ativos" on storage.objects;
+create policy "imagens: leitura para logados ativos" on storage.objects for select to authenticated
+  using (bucket_id = 'question-images' and (select public.is_active()) and (
+    storage.objects.name not like 't/%'
+    or (storage.foldername(storage.objects.name))[2] = (select auth.uid())::text
+    or (select public.has_permission('content.manage'))
+    or exists (select 1 from public.questions q
+                where q.image_path = storage.objects.name and public.can_read_question(q.id))));
+
+create policy "imagens: envio pelo professor na própria pasta" on storage.objects for insert to authenticated
+  with check (bucket_id = 'question-images' and (select public.is_teacher())
+              and (storage.foldername(storage.objects.name))[1] = 't'
+              and (storage.foldername(storage.objects.name))[2] = (select auth.uid())::text);
+create policy "imagens: exclusão pelo professor na própria pasta" on storage.objects for delete to authenticated
+  using (bucket_id = 'question-images' and (select public.is_teacher())
+         and (storage.foldername(storage.objects.name))[1] = 't'
+         and (storage.foldername(storage.objects.name))[2] = (select auth.uid())::text);

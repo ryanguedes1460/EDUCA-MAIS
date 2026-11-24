@@ -4,13 +4,12 @@
 import { html, setHTML, $, actions, toast, formDialog, confirmDialog, friendlyError, fmtDateTime, uuid, norm } from '../core/util.js';
 import { sb } from '../core/backend.js';
 import * as auth from '../core/auth.js';
-import { LEVELS, DIFFICULTY, QTYPES } from '../core/conteudo.js';
+import { editQuestion, STATUS_Q, VISIBILITY } from '../lib/editor-questao.js';
 import { columns, percentBars } from '../lib/graficos.js';
 
-const TABS = [['visao', 'Visão geral', 'stats.view'], ['usuarios', 'Usuários', 'users.view'], ['questoes', 'Questões', 'content.manage'], ['catalogo', 'Matérias e categorias', 'content.manage'],
+const TABS = [['visao', 'Visão geral', 'stats.view'], ['usuarios', 'Usuários', 'users.view'], ['questoes', 'Questões', 'content.manage'], ['professores', 'Professores', 'users.manage'], ['correcoes', 'Pedidos de correção', 'content.manage'], ['catalogo', 'Matérias e categorias', 'content.manage'],
   ['materiais', 'Materiais', 'content.manage'], ['comentarios', 'Comentários', 'content.manage'], ['config', 'Configurações', 'settings.manage'], ['permissoes', 'Permissões', 'roles.manage'], ['auditoria', 'Auditoria', 'audit.view']];
-const PERMS = { 'admin.access': 'Acessar a administração', 'users.view': 'Ver usuários', 'users.manage': 'Bloquear e desbloquear contas', 'roles.manage': 'Gerenciar categorias e permissões', 'content.manage': 'Gerenciar questões, matérias e materiais', 'stats.view': 'Ver estatísticas gerais', 'audit.view': 'Consultar auditoria e segurança', 'settings.manage': 'Alterar configurações globais' };
-const STATUS_Q = { draft: 'Rascunho', published: 'Publicada', archived: 'Arquivada' };
+const PERMS = { 'admin.access': 'Acessar a administração', 'users.view': 'Ver usuários', 'users.manage': 'Bloquear e desbloquear contas', 'roles.manage': 'Gerenciar categorias e permissões', 'content.manage': 'Gerenciar questões, matérias e materiais', 'stats.view': 'Ver estatísticas gerais', 'audit.view': 'Consultar auditoria e segurança', 'settings.manage': 'Alterar configurações globais', 'teacher.area': 'Área do professor (banco próprio, turmas e listas)' };
 
 async function q(promise) { const { data, error } = await promise; if (error) throw error; return data; }
 
@@ -44,11 +43,11 @@ export default {
       },
 
       async usuarios(box) {
-        let search = box.dataset.s || '', offset = 0;
+        let search = box.dataset.s || '', offset = 0, role = '';
         const draw = async () => {
-          const rows = await q(sb.rpc('admin_list_users', { p_search: search, p_limit: 50, p_offset: offset }));
+          const rows = await q(sb.rpc('admin_list_users', { p_search: search, p_limit: 50, p_offset: offset, p_role: role }));
           const total = rows[0]?.total || 0;
-          setHTML(box, html`<div class="stack"><form class="row" id="us"><input class="input" name="s" type="search" placeholder="Buscar por nome ou e-mail" value="${search}" style="max-width:360px"><button class="btn" type="submit">Buscar</button><span class="muted small">${total} usuário(s)</span></form>
+          setHTML(box, html`<div class="stack"><form class="row" id="us"><input class="input" name="s" type="search" placeholder="Buscar por nome ou e-mail" value="${search}" style="max-width:320px"><select class="input" name="role" style="max-width:180px" aria-label="Categoria"><option value="">Todas as categorias</option>${cat.roles.map(r => html`<option value="${r.id}" ${role === r.id ? 'selected' : ''}>${r.name}</option>`)}</select><button class="btn" type="submit">Buscar</button><span class="muted small">${total} usuário(s)</span></form>
             <div class="table-wrap card" style="padding:0"><table class="t"><thead><tr><th>Nome</th><th>E-mail</th><th>Categoria</th><th>Situação</th><th>Respostas</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody>
             ${rows.map(u => html`<tr><td><b>${u.display_name}</b><br><span class="muted small">desde ${fmtDateTime(u.created_at)}</span></td><td>${u.email}</td>
               <td>${auth.can('roles.manage') && u.id !== auth.state.user.id ? html`<select class="input" data-onchange="role" data-id="${u.id}" aria-label="Categoria de ${u.display_name}">${cat.roles.map(r => html`<option value="${r.id}" ${r.id === u.role ? 'selected' : ''}>${r.name}</option>`)}</select>` : cat.roles.find(r => r.id === u.role)?.name}</td>
@@ -57,7 +56,7 @@ export default {
               <td>${auth.can('users.manage') && u.id !== auth.state.user.id ? (u.status === 'blocked' ? html`<button class="btn ghost sm" type="button" data-action="unblock" data-id="${u.id}">Desbloquear</button>` : html`<button class="btn ghost sm" type="button" data-action="block" data-id="${u.id}" data-n="${u.display_name}">Bloquear</button>`) : ''}</td></tr>`)}
             </tbody></table></div>
             <div class="row" style="justify-content:center"><button class="btn ghost sm" type="button" data-action="uprev" ${offset ? '' : 'disabled'}>Anterior</button><button class="btn ghost sm" type="button" data-action="unext" ${offset + 50 < total ? '' : 'disabled'}>Próxima</button></div></div>`);
-          $('#us', box).onsubmit = e => { e.preventDefault(); search = e.target.s.value.trim(); box.dataset.s = search; offset = 0; draw(); };
+          $('#us', box).onsubmit = e => { e.preventDefault(); search = e.target.s.value.trim(); role = e.target.role.value; box.dataset.s = search; offset = 0; draw(); };
           box.onchange = async e => {
             if (e.target.dataset.onchange !== 'role') return;
             const role = e.target.value;
@@ -80,96 +79,90 @@ export default {
       },
 
       async questoes(box) {
-        let f = { s: '', subject: '', status: '' };
+        let f = { s: '', subject: '', status: '', vis: '', owner: '' };
+        try { f.owner = sessionStorage.getItem('adm:owner') || ''; sessionStorage.removeItem('adm:owner'); } catch {}
         const stats = new Map((await q(sb.rpc('admin_question_stats'))).map(r => [r.question_id, r]));
         const draw = async () => {
-          let query = sb.from('questions').select('id, code, statement, subject_id, level, difficulty, status, updated_at').order('updated_at', { ascending: false }).limit(300);
+          let query = sb.from('questions').select('id, code, statement, subject_id, level, difficulty, status, visibility, owner_id, updated_at').order('updated_at', { ascending: false }).limit(300);
           if (f.subject) query = query.eq('subject_id', +f.subject);
           if (f.status) query = query.eq('status', f.status);
-          let rows = await q(query);
-          if (f.s) rows = rows.filter(r => norm(r.statement + ' ' + r.code).includes(norm(f.s)));
+          if (f.vis) query = query.eq('visibility', f.vis);
+          if (f.owner === 'plataforma') query = query.is('owner_id', null); else if (f.owner) query = query.eq('owner_id', f.owner);
+          if (f.s) query = query.textSearch('search', f.s.split(/\s+/).filter(Boolean).map(w => norm(w)).join(' & '), { config: 'portuguese' });
+          const rows = await q(query);
+          const ownerIds = [...new Set(rows.map(r => r.owner_id).filter(Boolean))];
+          const names = new Map(ownerIds.length ? (await q(sb.from('profiles').select('id, display_name').in('id', ownerIds))).map(p => [p.id, p.display_name]) : []);
+          const teachers = await q(sb.rpc('admin_list_users', { p_search: '', p_limit: 200, p_offset: 0, p_role: 'teacher' }));
           setHTML(box, html`<div class="stack"><div class="row between"><form class="row" id="qf">
-              <input class="input" name="s" type="search" placeholder="Buscar" value="${f.s}" style="max-width:220px">
-              <select class="input" name="subject" style="max-width:200px"><option value="">Todas as disciplinas</option>${cat.subjects.map(s => html`<option value="${s.id}" ${String(f.subject) === String(s.id) ? 'selected' : ''}>${s.name}</option>`)}</select>
-              <select class="input" name="status" style="max-width:160px"><option value="">Todas</option>${Object.entries(STATUS_Q).map(([k, v]) => html`<option value="${k}" ${f.status === k ? 'selected' : ''}>${v}</option>`)}</select>
+              <input class="input" name="s" type="search" placeholder="Palavra-chave" value="${f.s}" style="max-width:200px">
+              <select class="input" name="subject" style="max-width:180px"><option value="">Todas as disciplinas</option>${cat.subjects.map(s => html`<option value="${s.id}" ${String(f.subject) === String(s.id) ? 'selected' : ''}>${s.name}</option>`)}</select>
+              <select class="input" name="owner" style="max-width:200px"><option value="">Todos os bancos</option><option value="plataforma" ${f.owner === 'plataforma' ? 'selected' : ''}>Banco da plataforma</option>${teachers.map(t => html`<option value="${t.id}" ${f.owner === t.id ? 'selected' : ''}>Banco de ${t.display_name}</option>`)}</select>
+              <select class="input" name="vis" style="max-width:200px"><option value="">Qualquer lugar</option>${Object.entries(VISIBILITY).map(([k, v]) => html`<option value="${k}" ${f.vis === k ? 'selected' : ''}>${v}</option>`)}</select>
+              <select class="input" name="status" style="max-width:140px"><option value="">Todas</option>${Object.entries(STATUS_Q).map(([k, v]) => html`<option value="${k}" ${f.status === k ? 'selected' : ''}>${v}</option>`)}</select>
               <button class="btn ghost" type="submit">Filtrar</button></form>
-              <button class="btn" type="button" data-action="newQ">Nova questão</button></div>
-            <div class="table-wrap card" style="padding:0"><table class="t"><thead><tr><th>Código</th><th>Enunciado</th><th>Disciplina</th><th>Nível</th><th>Situação</th><th>Respostas</th><th></th></tr></thead><tbody>
-            ${rows.map(r => { const st = stats.get(r.id); return html`<tr><td class="mono small">${r.code || ''}</td><td>${r.statement.slice(0, 110)}${r.statement.length > 110 ? '…' : ''}</td><td>${cat.sub(r.subject_id)?.name || ''}</td><td>${LEVELS[r.level]}</td>
+              <div class="row"><button class="btn ghost" type="button" data-action="dups">Possíveis duplicadas</button><button class="btn" type="button" data-action="newQ">Nova questão</button></div></div>
+            <div class="table-wrap card" style="padding:0"><table class="t"><thead><tr><th>Código</th><th>Enunciado</th><th>Banco</th><th>Disciplina</th><th>Situação</th><th>Respostas</th><th></th></tr></thead><tbody>
+            ${rows.map(r => { const st = stats.get(r.id); return html`<tr><td class="mono small">${r.code || ''}</td><td>${r.statement.slice(0, 110)}${r.statement.length > 110 ? '…' : ''}</td>
+              <td class="small">${r.owner_id ? names.get(r.owner_id) || 'professor' : 'Plataforma'}<br><span class="muted">${VISIBILITY[r.visibility]}</span></td><td>${cat.sub(r.subject_id)?.name || ''}</td>
               <td><span class="chip ${r.status === 'published' ? 'good' : r.status === 'archived' ? '' : 'warn'}">${STATUS_Q[r.status]}</span></td><td class="num">${st ? `${st.answers} · ${st.accuracy}%` : '0'}</td>
-              <td><button class="btn ghost sm" type="button" data-action="editQ" data-id="${r.id}">Editar</button></td></tr>`; })}
+              <td class="row" style="gap:4px">${r.visibility === 'pending_public' ? html`<button class="btn sm" type="button" data-action="approvePub" data-id="${r.id}">Aprovar no banco geral</button><button class="btn ghost sm" type="button" data-action="rejectPub" data-id="${r.id}">Recusar</button>` : ''}<button class="btn ghost sm" type="button" data-action="editQ" data-id="${r.id}">Editar</button></td></tr>`; })}
             </tbody></table></div>${rows.length >= 300 ? html`<p class="muted small">Mostrando as 300 mais recentes. Use os filtros.</p>` : ''}</div>`);
-          $('#qf', box).onsubmit = e => { e.preventDefault(); const fm = e.target; f = { s: fm.s.value, subject: fm.subject.value, status: fm.status.value }; draw(); };
+          $('#qf', box).onsubmit = e => { e.preventDefault(); const fm = e.target; f = { s: fm.s.value.trim(), subject: fm.subject.value, status: fm.status.value, vis: fm.vis.value, owner: fm.owner.value }; draw(); };
         };
-        const editor = async id => {
-          const qq = id ? await q(sb.from('questions').select('*, question_options(*)').eq('id', id).single()) : { level: 'enem', difficulty: 2, qtype: 'multiple_choice', status: 'draft', question_options: [] };
-          const opts = (qq.question_options || []).sort((a, b) => a.position - b.position);
-          while (opts.length < (qq.qtype === 'true_false' ? 2 : 4)) opts.push({ id: '', body: '', is_correct: false });
-          const topicsFor = sid => cat.topics.filter(t => t.subject_id === +sid);
-          const fd = await formDialog(id ? `Editar questão ${qq.code || ''}` : 'Nova questão', html`
-            <div class="form-grid">
-              <label class="f">Disciplina<select class="input" name="subject_id" required data-sub>${cat.subjects.map(s => html`<option value="${s.id}" ${qq.subject_id === s.id ? 'selected' : ''}>${s.name}</option>`)}</select></label>
-              <label class="f">Conteúdo<select class="input" name="topic_id" data-top><option value="">Nenhum</option>${topicsFor(qq.subject_id || cat.subjects[0]?.id).map(t => html`<option value="${t.id}" ${qq.topic_id === t.id ? 'selected' : ''}>${t.parent_id ? '— ' : ''}${t.name}</option>`)}</select></label>
-              <label class="f">Nível<select class="input" name="level">${Object.entries(LEVELS).map(([k, v]) => html`<option value="${k}" ${qq.level === k ? 'selected' : ''}>${v}</option>`)}</select></label>
-              <label class="f">Dificuldade<select class="input" name="difficulty">${Object.entries(DIFFICULTY).map(([k, v]) => html`<option value="${k}" ${String(qq.difficulty) === k ? 'selected' : ''}>${v}</option>`)}</select></label>
-              <label class="f">Banca/instituição<select class="input" name="board_id"><option value="">Nenhuma</option>${cat.boards.map(b => html`<option value="${b.id}" ${qq.board_id === b.id ? 'selected' : ''}>${b.name}</option>`)}</select></label>
-              <label class="f">Ano<input class="input" name="year" type="number" min="1950" max="2100" value="${qq.year || ''}"></label>
-              <label class="f">Tipo<select class="input" name="qtype">${Object.entries(QTYPES).map(([k, v]) => html`<option value="${k}" ${qq.qtype === k ? 'selected' : ''}>${v}</option>`)}</select></label>
-              <label class="f">Código (opcional)<input class="input" name="code" maxlength="30" value="${qq.code || ''}" placeholder="Gerado automaticamente"></label>
-            </div>
-            <label class="f">Tema<input class="input" name="theme" maxlength="120" value="${qq.theme || ''}"></label>
-            <label class="f">Enunciado<textarea class="input" name="statement" rows="4" required maxlength="8000">${qq.statement || ''}</textarea></label>
-            <div class="form-grid"><label class="f">Imagem (PNG, JPG, WEBP, até 2 MB)<input class="input" type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif"></label>
-              <label class="f">Descrição da imagem (acessibilidade)<input class="input" name="image_alt" maxlength="300" value="${qq.image_alt || ''}"></label></div>
-            ${qq.image_path ? html`<label class="check"><input type="checkbox" name="rmimg"> Remover a imagem atual (${qq.image_path})</label>` : ''}
-            <fieldset class="stack" style="border:1px solid var(--line);border-radius:10px;padding:12px"><legend class="f">Alternativas (marque a correta)</legend>
-              ${opts.map((o, i) => html`<div class="row" style="flex-wrap:nowrap"><input type="radio" name="correct" value="${i}" ${o.is_correct ? 'checked' : ''} aria-label="Alternativa ${i + 1} é a correta"><input type="hidden" name="oid${i}" value="${o.id || ''}"><input class="input" name="opt${i}" maxlength="2000" value="${o.body || ''}" placeholder="Alternativa ${'ABCDEF'[i]} (deixe vazia para remover)"></div>`)}
-              ${opts.length < 6 ? html`${[...Array(6 - opts.length)].map((_, j) => { const i = opts.length + j; return html`<div class="row" style="flex-wrap:nowrap"><input type="radio" name="correct" value="${i}" aria-label="Alternativa ${i + 1} é a correta"><input type="hidden" name="oid${i}" value=""><input class="input" name="opt${i}" maxlength="2000" placeholder="Alternativa ${'ABCDEF'[i]} (opcional)"></div>`; })}` : ''}
-            </fieldset>
-            <label class="f">Explicação da resolução<textarea class="input" name="explanation" rows="3" required maxlength="8000">${qq.explanation || ''}</textarea></label>
-            <label class="f">Dica do tutor (sem entregar a resposta)<textarea class="input" name="hint" rows="2" maxlength="1000">${qq.hint || ''}</textarea></label>
-            <label class="f">Referência ou fonte<input class="input" name="source" maxlength="300" value="${qq.source || ''}"></label>
-            <label class="f">Situação<select class="input" name="status">${Object.entries(STATUS_Q).map(([k, v]) => html`<option value="${k}" ${qq.status === k ? 'selected' : ''}>${v}</option>`)}</select></label>
-            ${id ? html`<p class="small"><button class="linkbtn" type="button" data-delq="${id}" style="color:var(--bad)">Excluir questão</button> <span class="muted">(só é possível se ninguém respondeu; senão, arquive)</span></p>` : ''}`,
-            { validate: async fm => {
-              const options = [...Array(6)].map((_, i) => ({ id: fm.get('oid' + i) || '', body: String(fm.get('opt' + i) || '').trim(), is_correct: String(fm.get('correct')) === String(i) })).filter(o => o.body);
-              if (String(fm.get('statement')).trim().length < 5) return 'Escreva o enunciado.';
-              if (String(fm.get('explanation')).trim().length < 2) return 'Escreva a explicação da resolução.';
-              if (options.length < 2) return 'Informe pelo menos 2 alternativas.';
-              if (fm.get('status') === 'published' && options.filter(o => o.is_correct).length !== 1) return 'Marque exatamente uma alternativa correta (e ela não pode estar vazia).';
-              let image_path = fm.get('rmimg') ? null : qq.image_path || null;
-              const file = fm.get('image');
-              if (file && file.size) {
-                if (file.size > 2 * 1048576) return 'A imagem passa de 2 MB.';
-                const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' }[file.type];
-                if (!ext) return 'Formato de imagem não aceito.';
-                const path = `q/${uuid()}.${ext}`;
-                const { error } = await sb.storage.from('question-images').upload(path, file, { contentType: file.type });
-                if (error) return friendlyError(error);
-                image_path = path;
-              }
-              const payload = { id: id || '', code: String(fm.get('code')).trim().toUpperCase(), subject_id: fm.get('subject_id'), topic_id: fm.get('topic_id'), level: fm.get('level'), difficulty: fm.get('difficulty'), board_id: fm.get('board_id'), year: fm.get('year'), qtype: fm.get('qtype'),
-                theme: String(fm.get('theme')).trim(), statement: String(fm.get('statement')).trim(), image_path, image_alt: String(fm.get('image_alt')).trim(), explanation: String(fm.get('explanation')).trim(), hint: String(fm.get('hint')).trim(), source: String(fm.get('source')).trim(), status: fm.get('status') };
-              const { error } = await sb.rpc('admin_save_question', { p_question: payload, p_options: options });
-              return error ? friendlyError(error) : null;
-            } });
-          if (fd) { toast('Questão salva'); draw(); }
+        const setVis = async (id, v) => { try { await q(sb.rpc('admin_set_visibility', { p_question: id, p_visibility: v })); toast(v === 'public' ? 'Questão agora está no banco geral' : 'Questão continua no banco do professor'); } catch (e) { toast(friendlyError(e)); } draw(); };
+        box._h = {
+          newQ: async () => { if (await editQuestion({ cat, staff: true })) draw(); },
+          editQ: async b => { if (await editQuestion({ id: b.dataset.id, cat, staff: true })) draw(); },
+          approvePub: b => setVis(b.dataset.id, 'public'),
+          rejectPub: b => setVis(b.dataset.id, 'private'),
+          async dups() {
+            const rows = await q(sb.rpc('admin_find_duplicates', { p_min: 0.6 }));
+            await formDialog('Possíveis questões duplicadas', rows.length ? html`<p class="small muted">Pares com texto parecido (60% ou mais). Abra cada uma para arquivar a repetida.</p><div class="stack" style="max-height:60vh;overflow:auto">${rows.map(d => html`<div class="card small"><b>${Math.round(d.similarity * 100)}% parecidas</b>
+              <p><span class="mono">${d.a_code || ''}</span> ${d.a_statement}</p><p><span class="mono">${d.b_code || ''}</span> ${d.b_statement}</p></div>`)}</div>` : html`<p>Nenhuma questão parecida encontrada.</p>`, { ok: 'Fechar' });
+          }
         };
-        // Atualiza conteúdos ao trocar disciplina e trata exclusão dentro do diálogo
-        const onDlg = e => {
-          const s = e.target.closest('dialog [data-sub]');
-          if (s && e.type === 'change') { const t = s.closest('form').querySelector('[data-top]'); setHTML(t, html`<option value="">Nenhum</option>${cat.topics.filter(x => x.subject_id === +s.value).map(x => html`<option value="${x.id}">${x.parent_id ? '— ' : ''}${x.name}</option>`)}`); }
-          const d = e.target.closest('dialog [data-delq]');
-          if (d && e.type === 'click') (async () => {
-            if (!(await confirmDialog('Excluir esta questão definitivamente?', { ok: 'Excluir', danger: true }))) return;
-            const { error } = await sb.from('questions').delete().eq('id', d.dataset.delq);
-            if (error) toast(/foreign key|restrict|violates/i.test(error.message) ? 'Esta questão já foi respondida. Arquive em vez de excluir.' : friendlyError(error));
-            else { toast('Questão excluída'); d.closest('dialog').close(); draw(); }
-          })();
+        await draw();
+      },
+
+      async professores(box) {
+        const draw = async () => {
+          const [o, reqs, teachers] = await Promise.all([q(sb.rpc('admin_teacher_overview')), q(sb.rpc('admin_list_teacher_requests')), q(sb.rpc('admin_list_users', { p_search: '', p_limit: 200, p_offset: 0, p_role: 'teacher' }))]);
+          const pend = reqs.filter(r => r.status === 'pending');
+          setHTML(box, html`<div class="stack">
+            <div class="grid g4">${[[o.professores, 'professores ativos'], [o.pedidos_professor, 'pedidos aguardando'], [o.turmas, 'turmas'], [o.listas, 'listas publicadas'], [o.questoes_professores, 'questões nos bancos dos professores'], [o.aguardando_banco_geral, 'aguardando o banco geral'], [o.correcoes_abertas, 'pedidos de correção abertos']].map(([v, k]) => html`<div class="card stat"><div class="v num">${v ?? 0}</div><div class="k">${k}</div></div>`)}</div>
+            <div class="card stack"><h3>Pedidos para ser professor</h3>${pend.length ? html`<div class="list">${pend.map(r => html`<div class="row between"><div><b>${r.display_name}</b> <span class="muted small">${r.email} · ${fmtDateTime(r.created_at)}</span><br><span class="small">${r.subjects || ''}</span><p class="small pre">${r.message || ''}</p></div>
+              <div class="row"><button class="btn sm" type="button" data-action="tApprove" data-id="${r.user_id}">Aprovar</button><button class="btn ghost sm" type="button" data-action="tReject" data-id="${r.user_id}">Recusar</button></div></div>`)}</div>` : html`<p class="muted small">Nenhum pedido aguardando.</p>`}</div>
+            <div class="card stack"><h3>Professores</h3>${teachers.length ? html`<div class="table-wrap"><table class="t"><thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th><th></th></tr></thead><tbody>${teachers.map(t => html`<tr><td><b>${t.display_name}</b></td><td>${t.email}</td><td>${t.status === 'blocked' ? 'Bloqueado' : 'Ativo'}</td>
+              <td class="row" style="gap:4px"><a class="btn ghost sm" href="#admin/questoes" data-action="seeBank" data-id="${t.id}">Ver banco</a><button class="btn ghost sm" type="button" data-action="tReject" data-id="${t.id}">Tirar acesso de professor</button></td></tr>`)}</tbody></table></div>` : html`<p class="muted small">Nenhum professor ainda.</p>`}</div></div>`);
         };
-        document.addEventListener('change', onDlg); document.addEventListener('click', onDlg);
-        box._cleanup = () => { document.removeEventListener('change', onDlg); document.removeEventListener('click', onDlg); };
-        box._h = { newQ: () => editor(null), editQ: b => editor(b.dataset.id) };
+        const decide = async (id, ok) => {
+          const fd = ok ? new FormData() : await formDialog('Recusar ou tirar o acesso de professor', html`<label class="f">Observação (opcional, a pessoa verá)<input class="input" name="n" maxlength="500"></label>`, { ok: 'Confirmar' });
+          if (!fd) return;
+          try { await q(sb.rpc('admin_decide_teacher', { p_user: id, p_approve: ok, p_note: String(fd.get('n') || '').trim() || null })); toast(ok ? 'Professor aprovado' : 'Feito'); } catch (e) { toast(friendlyError(e)); }
+          draw();
+        };
+        box._h = { tApprove: b => decide(b.dataset.id, true), tReject: b => decide(b.dataset.id, false), seeBank: b => { sessionStorage.setItem('adm:owner', b.dataset.id); } };
+        await draw();
+      },
+
+      async correcoes(box) {
+        const draw = async () => {
+          const rows = await q(sb.from('correction_requests').select('id, message, status, response, created_at, requested_by, question_id, questions(code, statement)').order('created_at', { ascending: false }).limit(200));
+          const ids = [...new Set(rows.map(r => r.requested_by))];
+          const names = new Map(ids.length ? (await q(sb.from('profiles').select('id, display_name').in('id', ids))).map(p => [p.id, p.display_name]) : []);
+          setHTML(box, rows.length ? html`<div class="stack">${rows.map(r => html`<div class="card stack"><div class="row between"><b>${names.get(r.requested_by) || 'Professor'} · <span class="mono">${r.questions?.code || ''}</span></b><span class="chip ${r.status === 'open' ? 'warn' : 'good'}">${{ open: 'Aberto', resolved: 'Resolvido', rejected: 'Recusado' }[r.status]}</span></div>
+            <p class="small muted">${(r.questions?.statement || '').slice(0, 160)}</p><p class="pre">${r.message}</p>${r.response ? html`<p class="small"><b>Resposta:</b> ${r.response}</p>` : ''}
+            ${r.status === 'open' ? html`<div class="row"><button class="btn sm" type="button" data-action="fixQ" data-q="${r.question_id}">Abrir a questão</button><button class="btn ghost sm" type="button" data-action="closeReq" data-id="${r.id}" data-s="resolved">Marcar como resolvido</button><button class="btn ghost sm" type="button" data-action="closeReq" data-id="${r.id}" data-s="rejected">Recusar</button></div>` : ''}</div>`)}</div>` : html`<div class="empty">Nenhum pedido de correção.</div>`);
+        };
+        box._h = {
+          fixQ: async b => { await editQuestion({ id: b.dataset.q, cat, staff: true }); },
+          async closeReq(b) {
+            const fd = await formDialog(b.dataset.s === 'resolved' ? 'Resolver pedido' : 'Recusar pedido', html`<label class="f">Resposta para o professor<input class="input" name="r" maxlength="2000"></label>`, { ok: 'Confirmar' });
+            if (!fd) return;
+            try { await q(sb.rpc('admin_resolve_correction', { p_id: b.dataset.id, p_status: b.dataset.s, p_response: String(fd.get('r')).trim() })); toast('Pedido atualizado'); } catch (e) { toast(friendlyError(e)); }
+            draw();
+          }
+        };
         await draw();
       },
 
@@ -315,7 +308,7 @@ export default {
         const [logs, events] = await Promise.all([q(sb.from('audit_log').select('*').order('id', { ascending: false }).limit(200)), q(sb.from('security_events').select('*').order('id', { ascending: false }).limit(100))]);
         const ids = [...new Set([...logs.map(l => l.actor_id), ...events.map(e => e.user_id)].filter(Boolean))];
         const names = new Map(ids.length ? (await q(sb.from('profiles').select('id, display_name').in('id', ids))).map(p => [p.id, p.display_name]) : []);
-        const ACT = { insert: 'criou', update: 'alterou', delete: 'excluiu', 'user.block': 'bloqueou usuário', 'user.unblock': 'desbloqueou usuário', 'user.role': 'mudou categoria', 'admin.bootstrap': 'criação do administrador', 'account.self_delete': 'excluiu a própria conta' };
+        const ACT = { insert: 'criou', update: 'alterou', delete: 'excluiu', 'user.block': 'bloqueou usuário', 'user.unblock': 'desbloqueou usuário', 'user.role': 'mudou categoria', 'admin.bootstrap': 'criação do administrador', 'account.self_delete': 'excluiu a própria conta', 'teacher.approve': 'aprovou professor', 'teacher.reject': 'recusou/tirou professor' };
         setHTML(box, html`<div class="stack"><div class="card stack"><h3>Alertas de segurança</h3>${events.length ? html`<div class="list">${events.map(e => html`<div class="small"><b>${e.kind}</b> · ${names.get(e.user_id) || e.user_id || '–'} · ${fmtDateTime(e.created_at)} <span class="muted mono">${JSON.stringify(e.details)}</span></div>`)}</div>` : html`<p class="muted small">Nenhum alerta.</p>`}</div>
           <div class="table-wrap card" style="padding:0"><table class="t"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Onde</th><th>Detalhes</th></tr></thead><tbody>
           ${logs.map(l => html`<tr><td class="small">${fmtDateTime(l.created_at)}</td><td>${names.get(l.actor_id) || (l.actor_id ? l.actor_id.slice(0, 8) : 'sistema')}</td><td>${ACT[l.action] || l.action}</td><td class="small">${l.target_table || ''} <span class="mono muted">${(l.target_id || '').slice(0, 12)}</span></td><td class="mono small muted">${JSON.stringify(l.details).slice(0, 120)}</td></tr>`)}

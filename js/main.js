@@ -21,6 +21,8 @@ const NAV = [
   { id: 'anotacoes', name: 'Anotações' },
   { id: 'desempenho', name: 'Desempenho', mobile: true },
   { id: 'materiais', name: 'Materiais', needs: 'login' },
+  { id: 'turmas', name: 'Minhas turmas', needs: 'login' },
+  { id: 'professor', name: 'Área do professor', needs: 'teacher.area' },
   { sep: true },
   { id: 'conta', name: 'Minha conta' },
   { id: 'aparencia', name: 'Aparência' },
@@ -30,7 +32,8 @@ const VIEWS = {
   entrar: () => import('./views/entrar.js'), inicio: () => import('./views/inicio.js'), questoes: () => import('./views/questoes.js'),
   flashcards: () => import('./views/flashcards.js'), plano: () => import('./views/plano.js'), foco: () => import('./views/foco.js'),
   anotacoes: () => import('./views/anotacoes.js'), desempenho: () => import('./views/desempenho.js'), materiais: () => import('./views/materiais.js'),
-  conta: () => import('./views/conta.js'), aparencia: () => import('./views/aparencia.js'), admin: () => import('./views/admin.js')
+  conta: () => import('./views/conta.js'), aparencia: () => import('./views/aparencia.js'), admin: () => import('./views/admin.js'),
+  turmas: () => import('./views/turmas.js'), professor: () => import('./views/professor.js')
 };
 
 const visible = n => !n.needs || (n.needs === 'login' ? auth.isLogged() : auth.can(n.needs));
@@ -124,8 +127,9 @@ async function route() {
   let { view, params } = parseHash();
   if (configured && !auth.isLogged() && !guestChosen() && view !== 'entrar') view = 'entrar';
   if (auth.state.recovery && view !== 'entrar') { view = 'entrar'; params = ['nova-senha']; }
+  if (view === 'professor' && !auth.can('teacher.area')) { view = 'conta'; toast('A área do professor é liberada depois que o administrador aprova o seu pedido (em Minha conta).'); history.replaceState(null, '', '#conta'); }
   if (view === 'admin' && !auth.can('admin.access')) { view = 'inicio'; toast('Área restrita à administração.'); history.replaceState(null, '', '#inicio'); }
-  if (view === 'materiais' && !auth.isLogged()) { view = 'entrar'; }
+  if ((view === 'materiais' || view === 'turmas') && !auth.isLogged()) { view = 'entrar'; }
   if (auth.isBlocked() && view !== 'conta') view = 'bloqueado';
   if (typeof cleanup === 'function') { try { cleanup(); } catch {} } cleanup = null;
   // Cada tela recebe um contêiner novo (evita acumular eventos de telas anteriores)
