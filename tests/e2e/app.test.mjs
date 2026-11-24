@@ -119,7 +119,7 @@ describe('fluxo completo do estudante', () => {
     await A.evaluate(() => dispatchEvent(new Event('offline')));
     await A.fill('#newTask input[name=title]', `Revisar química offline ${email}`);
     await A.click('#newTask button[type=submit]');
-    await A.waitForFunction(() => /Offline/.test(document.querySelector('#syncLabel')?.textContent || ''));
+    await A.waitForFunction(() => /Offline.*pendente/.test(document.querySelector('#syncLabel')?.textContent || ''));
     const label = await A.innerText('#syncLabel');
     assert.match(label, /pendente/);
     const before = sql(`select count(*) from public.plan_tasks where title = 'Revisar química offline ${email}'`);
@@ -268,6 +268,7 @@ describe('interface, segurança e offline', () => {
     await page.click('[data-action=device][data-v=mobile]');
     await page.waitForSelector('html[data-device="mobile"]', { timeout: 3000 }).catch(() => {});
     assert.equal(await page.getAttribute('html', 'data-device'), 'mobile');
+    await page.waitForTimeout(500); // a tela muda na hora; a gravação no aparelho termina logo depois
     await page.reload(); await page.waitForSelector('html[data-ready="1"]');
     assert.equal(await page.getAttribute('html', 'data-device'), 'mobile', 'preferência salva');
     await page.goto(BASE + '#aparencia'); await page.waitForSelector('html[data-ready="1"]');

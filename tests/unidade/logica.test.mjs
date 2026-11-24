@@ -6,7 +6,7 @@ import { schedule, isDue, stage, fmtDays, describeInterval } from '../../js/lib/
 import { streak, accuracy, weakTopics, goalProgress, minutesByDay, lastDays } from '../../js/lib/stats.js';
 import { mergeRemote, toRemote, fromRemote, USER_TABLES, PUSH_ORDER } from '../../js/core/tabelas.js';
 import { esc, html, raw, norm, dayKey } from '../../js/core/util.js';
-import { render as renderSW, renderInstaller } from '../../scripts/build.mjs';
+import { render as renderSW, renderInstaller, renderPostRestore } from '../../scripts/build.mjs';
 import seed from '../../js/data/conteudo-inicial.js';
 
 const DAY = 864e5;
@@ -137,6 +137,8 @@ describe('conteúdo e empacotamento', () => {
     assert.equal(current, renderSW(), 'sw.js desatualizado: rode "npm run build"');
     const inst = readFileSync(new URL('../../supabase/instalar.sql', import.meta.url), 'utf8');
     assert.equal(inst, renderInstaller(), 'supabase/instalar.sql desatualizado: rode "npm run build"');
+    const pos = readFileSync(new URL('../../supabase/pos-restauracao.sql', import.meta.url), 'utf8');
+    assert.equal(pos, renderPostRestore(), 'supabase/pos-restauracao.sql desatualizado: rode "npm run build"');
   });
   test('nenhuma chave secreta no código público', () => {
     const files = ['config.js', 'index.html', 'js/core/backend.js'];

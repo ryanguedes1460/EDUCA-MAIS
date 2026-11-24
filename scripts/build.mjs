@@ -47,9 +47,29 @@ export function renderInstaller() {
   return head + files.map(f => `\n-- >>>>>>>>>> ${f}\n` + readFileSync(join(dir, f), 'utf8')).join('\n');
 }
 
+/** SQL para rodar DEPOIS de restaurar um backup: o dump do esquema "public"
+ *  não leva o gatilho em auth.users nem as políticas do Storage. */
+export function renderPostRestore() {
+  const dir = join(ROOT, 'supabase', 'migrations');
+  const storage = readFileSync(join(dir, '20261124000400_armazenamento.sql'), 'utf8')
+    .replace(/create policy ("[^"]+") on storage\.objects/g, 'drop policy if exists $1 on storage.objects;\ncreate policy $1 on storage.objects');
+  return `-- =====================================================================
+-- EDUCA MAIS · PÓS-RESTAURAÇÃO (gerado por scripts/build.mjs)
+-- Rode no SQL Editor DEPOIS de restaurar um backup (docs/BANCO-DE-DADOS.md).
+-- Recria o que fica fora do esquema "public": o gatilho que cria o perfil
+-- no cadastro e as regras de acesso aos arquivos. Pode rodar mais de uma vez.
+-- =====================================================================
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users for each row execute function public.handle_new_user();
+` + storage;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const out = render();
   writeFileSync(join(ROOT, 'sw.js'), out);
   writeFileSync(join(ROOT, 'supabase', 'instalar.sql'), renderInstaller());
+  writeFileSync(join(ROOT, 'supabase', 'pos-restauracao.sql'), renderPostRestore());
   console.log('sw.js atualizado:', out.match(/VERSION = '([^']*)'/)[1], '· supabase/instalar.sql gerado');
 }
