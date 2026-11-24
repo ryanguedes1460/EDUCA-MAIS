@@ -287,8 +287,11 @@ describe('administração', () => {
   test('categorias: admin muda categoria de outro; a categoria admin não perde acesso total', async () => {
     const u = await newUser('Prof');
     assert.ifError((await ryan.client.rpc('admin_set_user_role', { p_user: u.id, p_role: 'teacher' })).error);
-    const { data } = await u.client.rpc('has_permission', { perm: 'content.manage' });
+    // professor tem só a própria área, não o conteúdo de toda a plataforma
+    const { data } = await u.client.rpc('has_permission', { perm: 'teacher.area' });
     assert.equal(data, true);
+    const { data: d1 } = await u.client.rpc('has_permission', { perm: 'content.manage' });
+    assert.equal(d1, false);
     const { data: d2 } = await u.client.rpc('has_permission', { perm: 'users.manage' });
     assert.equal(d2, false);
     const r = await ryan.client.from('roles').update({ permissions: ['admin.access'] }).eq('id', 'admin');
