@@ -48,4 +48,4 @@ npm run test:banco      # testes do banco e da segurança
 npm run test:e2e        # testes no navegador
 npm run build           # OBRIGATÓRIO depois de mudar arquivos do app (atualiza sw.js)
 ```
-A versão anterior (0.2) está guardada em `legado/index-v0.2.html`. Os dados dela são trazidos automaticamente na primeira abertura.
+As versões anteriores estão guardadas em `legado/`: a 0.2 (`index-v0.2.html`) e a 0.3 (`index-v0.3.html`, a que usa a tabela `student_data`). Os dados guardados no aparelho por elas são trazidos automaticamente na primeira abertura.
