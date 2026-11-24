@@ -9,7 +9,15 @@ export default {
   title: 'Anotações',
   async render(el) {
     const cat = await catalog();
-    const save = debounce(async (id, fields) => { await store.patch('notes', id, fields); const m = $('#noteMeta', el); if (m) m.textContent = 'Salvo ' + fmtDateTime(Date.now()); }, 600);
+    // junta os campos alterados (título e texto) antes de gravar, para nada se perder
+    let pending = {};
+    const write = async () => {
+      const batch = pending; pending = {};
+      for (const [id, fields] of Object.entries(batch)) await store.patch('notes', id, fields);
+      const m = $('#noteMeta', el); if (m) m.textContent = 'Salvo ' + fmtDateTime(Date.now());
+    };
+    const flush = debounce(write, 600);
+    const save = (id, fields) => { pending[id] = { ...(pending[id] || {}), ...fields }; flush(); };
 
     const draw = async () => {
       const notes = (await store.all('notes')).sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
@@ -47,5 +55,9 @@ export default {
       async del() { if (await confirmDialog('Excluir esta anotação?', { ok: 'Excluir', danger: true })) { await store.remove('notes', curId); curId = null; toast('Anotação excluída'); draw(); } }
     });
     await draw();
+    // ao sair da tela, grava na hora o que ainda estava esperando
+    const onHide = () => { if (Object.keys(pending).length) write(); };
+    addEventListener('pagehide', onHide);
+    return () => { removeEventListener('pagehide', onHide); onHide(); };
   }
 };

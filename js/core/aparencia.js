@@ -32,6 +32,9 @@ export async function load() {
 }
 
 export async function save(patch) {
+  // aplica na hora (resposta imediata na tela) e depois grava
+  current = { ...current, ...patch };
+  apply();
   const s = { ...DEFAULTS, ...(await store.get('user_settings', 'me') || {}), ...patch, id: 'me' };
   await store.put('user_settings', s);
   current = s;

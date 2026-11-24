@@ -177,6 +177,7 @@ async function enterAccount() {
       const n = await store.importFrom('local'); toast(`${n} registros adicionados à sua conta`);
       await store.deleteScope('local');
       await store.useScope(uid);
+      await sync.refreshCounts();
     } else await store.meta.set('local_rows_asked', guestRows);
   }
   await aparencia.load();
@@ -206,12 +207,13 @@ let updateReady = null;
 async function registerSW() {
   if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
   try {
+    const hadController = !!navigator.serviceWorker.controller; // na 1ª instalação não recarrega
     const reg = await navigator.serviceWorker.register('sw.js');
     const watch = w => w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) { updateReady = w; renderBanners(); } });
     if (reg.waiting && navigator.serviceWorker.controller) { updateReady = reg.waiting; renderBanners(); }
     reg.addEventListener('updatefound', () => watch(reg.installing));
     let reloaded = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
     setInterval(() => reg.update().catch(() => {}), 60 * 60e3);
   } catch (e) { console.warn('service worker', e); }
 }

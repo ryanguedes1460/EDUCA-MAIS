@@ -32,8 +32,24 @@ export function render() {
     .replace(/const ASSETS = \[[\s\S]*?\];/, `const ASSETS = [\n  './',\n${assets.map(a => `  './${a}'`).join(',\n')}\n];`);
 }
 
+/** Junta todas as migrações num arquivo único para colar no SQL Editor do Supabase. */
+export function renderInstaller() {
+  const dir = join(ROOT, 'supabase', 'migrations');
+  const files = readdirSync(dir).filter(f => f.endsWith('.sql')).sort();
+  const head = `-- =====================================================================
+-- EDUCA MAIS · INSTALADOR DO BANCO DE DADOS (gerado por scripts/build.mjs)
+-- Como usar: Supabase > SQL Editor > New query > cole TODO este arquivo > Run.
+-- Rode UMA vez, num projeto novo. Para atualizações futuras, rode só as
+-- migrações novas (veja docs/MANUTENCAO.md).
+-- Arquivos incluídos: ${files.join(', ')}
+-- =====================================================================
+`;
+  return head + files.map(f => `\n-- >>>>>>>>>> ${f}\n` + readFileSync(join(dir, f), 'utf8')).join('\n');
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const out = render();
   writeFileSync(join(ROOT, 'sw.js'), out);
-  console.log('sw.js atualizado:', out.match(/VERSION = '([^']*)'/)[1]);
+  writeFileSync(join(ROOT, 'supabase', 'instalar.sql'), renderInstaller());
+  console.log('sw.js atualizado:', out.match(/VERSION = '([^']*)'/)[1], '· supabase/instalar.sql gerado');
 }

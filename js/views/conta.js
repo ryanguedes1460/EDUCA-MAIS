@@ -81,6 +81,8 @@ export default {
 
     actions(el, {
       async logout() {
+        // antes de sair, tenta enviar o que ainda falta
+        if (navigator.onLine) await sync.syncNow().catch(() => {});
         const pending = await store.pendingCount();
         if (pending && !(await confirmDialog(`Há ${pending} alteração(ões) ainda não enviadas (sem internet?). Se sair agora, elas ficam guardadas neste aparelho até você entrar de novo. Sair mesmo assim?`, { ok: 'Sair' }))) return;
         try { await auth.signOut('local'); } catch (e) { toast(friendlyError(e)); }

@@ -15,7 +15,10 @@
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.119.2",
+    "playwright": "^1.63.0",
     "supabase": "3.3.0"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
