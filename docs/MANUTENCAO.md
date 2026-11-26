@@ -3,9 +3,8 @@
 ## Rotina sugerida
 | Quando | O quê |
 |---|---|
-| Toda semana | Conferir se o **Backup do banco** rodou (GitHub > Actions). Olhar a aba **Auditoria** e os eventos de segurança no painel. |
+| Toda semana | Olhar os alunos **aguardando liberação** e as **Dúvidas dos alunos** no painel. Olhar a aba **Auditoria** e os eventos de segurança no painel. |
 | Todo mês | Aceitar os pedidos do **Dependabot** que passarem nos testes. Ver uso do plano grátis no Supabase (banco, arquivos, usuários). |
-| A cada 3 meses | Testar a recuperação de um backup num projeto Supabase de teste ([BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação)). |
 
 ## Adicionar questões
 - **Pelo painel** (mais fácil): Administração > Questões > Nova questão. Salve como rascunho, revise, e mude para Publicada.

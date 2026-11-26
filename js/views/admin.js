@@ -6,8 +6,9 @@ import { sb } from '../core/backend.js';
 import * as auth from '../core/auth.js';
 import { editQuestion, STATUS_Q, VISIBILITY } from '../lib/editor-questao.js';
 import { columns, percentBars } from '../lib/graficos.js';
+import { views as viewsAlunos } from './admin-alunos.js';
 
-const TABS = [['visao', 'Visão geral', 'stats.view'], ['usuarios', 'Usuários', 'users.view'], ['questoes', 'Questões', 'content.manage'], ['professores', 'Professores', 'users.manage'], ['correcoes', 'Pedidos de correção', 'content.manage'], ['catalogo', 'Matérias e categorias', 'content.manage'],
+const TABS = [['visao', 'Visão geral', 'stats.view'], ['alunos', 'Alunos e liberação', 'users.manage'], ['aulas', 'Aulas', 'content.manage'], ['grupos', 'Grupos', 'users.manage'], ['duvidas', 'Dúvidas dos alunos', 'users.manage'], ['usuarios', 'Usuários', 'users.view'], ['questoes', 'Questões', 'content.manage'], ['professores', 'Professores', 'users.manage'], ['correcoes', 'Pedidos de correção', 'content.manage'], ['catalogo', 'Matérias e categorias', 'content.manage'],
   ['materiais', 'Materiais', 'content.manage'], ['comentarios', 'Comentários', 'content.manage'], ['config', 'Configurações', 'settings.manage'], ['permissoes', 'Permissões', 'roles.manage'], ['auditoria', 'Auditoria', 'audit.view']];
 const PERMS = { 'admin.access': 'Acessar a administração', 'users.view': 'Ver usuários', 'users.manage': 'Bloquear e desbloquear contas', 'roles.manage': 'Gerenciar categorias e permissões', 'content.manage': 'Gerenciar questões, matérias e materiais', 'stats.view': 'Ver estatísticas gerais', 'audit.view': 'Consultar auditoria e segurança', 'settings.manage': 'Alterar configurações globais', 'teacher.area': 'Área do professor (banco próprio, turmas e listas)' };
 
@@ -29,7 +30,7 @@ export default {
       setHTML(el, html`<div class="stack" style="gap:var(--gap)"><div class="head"><div><span class="eyebrow">Somente administração</span><h1>Administração</h1><p>Olá, ${auth.state.profile?.display_name}. Todas as ações são verificadas no servidor e registradas na auditoria.</p></div></div>
         <div class="tabs" role="tablist">${tabs.map(([k, n]) => html`<a href="#admin/${k}" role="tab" aria-selected="${tab === k}">${n}</a>`)}</div><div id="adm"></div></div>`);
       const box = $('#adm', el);
-      try { if (!cat) await loadCat(); await views[tab](box); }
+      try { if (!cat) { await loadCat(); Object.assign(views, viewsAlunos(cat)); } await views[tab](box, params.slice(1)); }
       catch (e) { console.error(e); setHTML(box, html`<p class="err">${friendlyError(e)}</p>`); }
     };
 
@@ -210,11 +211,12 @@ export default {
             <div class="form-grid"><label class="f">Arquivo (PDF, imagem, MP3 ou MP4, até 50 MB)<input class="input" type="file" name="file" required accept="application/pdf,image/png,image/jpeg,audio/mpeg,video/mp4"></label>
             <label class="f">Título<input class="input" name="title" required maxlength="160"></label>
             <label class="f">Disciplina<select class="input" name="subject_id"><option value="">Nenhuma</option>${cat.subjects.map(s => html`<option value="${s.id}">${s.name}</option>`)}</select></label>
-            <label class="f">Quem pode abrir<select class="input" name="access"><option value="authenticated">Todos com conta</option><option value="staff">Só a equipe</option></select></label></div>
+            <label class="f">Quem pode abrir<select class="input" name="access"><option value="authenticated">Alunos</option><option value="staff">Só a equipe</option></select></label>
+            <label class="f">Quais alunos<select class="input" name="visibility"><option value="liberados">Só quem eu liberar</option><option value="todos">Todos os alunos liberados</option></select></label></div>
             <label class="f">Descrição<input class="input" name="description" maxlength="1000"></label><p class="err" data-e hidden></p>
             <div><button class="btn" type="submit">Enviar</button></div></form>
             <div class="table-wrap card" style="padding:0"><table class="t"><thead><tr><th>Título</th><th>Acesso</th><th>Situação</th><th>Aberturas (30 dias)</th><th></th></tr></thead><tbody>
-            ${rows.map(m => html`<tr><td><b>${m.title}</b><br><span class="muted small">${m.storage_path}</span></td><td>${m.access === 'staff' ? 'Equipe' : 'Todos com conta'}</td><td>${STATUS_Q[m.status]}</td><td class="num">${cnt[m.id] || 0}</td>
+            ${rows.map(m => html`<tr><td><b>${m.title}</b><br><span class="muted small">${m.storage_path}</span></td><td>${m.access === 'staff' ? 'Equipe' : m.visibility === 'todos' ? 'Todos os alunos' : 'Só quem eu liberar'}</td><td>${STATUS_Q[m.status]}</td><td class="num">${cnt[m.id] || 0}</td>
               <td class="row" style="gap:4px"><button class="btn ghost sm" type="button" data-action="matToggle" data-id="${m.id}" data-s="${m.status}">${m.status === 'published' ? 'Arquivar' : 'Publicar'}</button><button class="btn ghost sm" type="button" data-action="matDel" data-id="${m.id}" data-p="${m.storage_path}">Excluir</button></td></tr>`)}
             </tbody></table></div></div>`);
           $('#mf', box).onsubmit = async e => {
@@ -225,7 +227,7 @@ export default {
             fm.querySelector('button').disabled = true;
             const up = await sb.storage.from('materials').upload(path, file, { contentType: file.type });
             if (up.error) { err.textContent = friendlyError(up.error); err.hidden = false; fm.querySelector('button').disabled = false; return; }
-            const { error } = await sb.from('materials').insert({ title: fm.title.value.trim(), description: fm.description.value.trim() || null, subject_id: fm.subject_id.value ? +fm.subject_id.value : null, access: fm.access.value, storage_path: path, mime_type: file.type, size_bytes: file.size });
+            const { error } = await sb.from('materials').insert({ title: fm.title.value.trim(), description: fm.description.value.trim() || null, subject_id: fm.subject_id.value ? +fm.subject_id.value : null, access: fm.access.value, visibility: fm.visibility.value, storage_path: path, mime_type: file.type, size_bytes: file.size });
             if (error) { await sb.storage.from('materials').remove([path]); err.textContent = friendlyError(error); err.hidden = false; fm.querySelector('button').disabled = false; return; }
             toast('Material enviado'); draw();
           };

@@ -29,7 +29,7 @@ Sem configuração, o site funciona em **modo local**: tudo fica só no aparelho
 | [docs/SISTEMA_PROFESSORES.md](docs/SISTEMA_PROFESSORES.md) | Área do professor |
 | [docs/SISTEMA_ALUNOS.md](docs/SISTEMA_ALUNOS.md) | O que o aluno faz e Minhas turmas |
 | [docs/SEGURANCA.md](docs/SEGURANCA.md) | Como os dados são protegidos e os limites honestos |
-| [docs/BANCO_DE_DADOS.md](docs/BANCO_DE_DADOS.md) | Tabelas, relações, backup e recuperação |
+| [docs/BANCO_DE_DADOS.md](docs/BANCO_DE_DADOS.md) | Tabelas, relações e instalação num projeto novo |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Como o app é organizado por dentro |
 | [docs/MANUTENCAO.md](docs/MANUTENCAO.md) | Atualizar o app, adicionar questões, rotina de cuidados |
 | [docs/TESTES.md](docs/TESTES.md) | Testes automáticos e resultados |

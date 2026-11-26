@@ -7,7 +7,8 @@ export const DEFAULTS = {
   id: 'me', theme: 'auto', color_primary: null, color_secondary: null, color_accent: null, device_mode: 'auto',
   card_style: 'elevated', density: 'comfortable', font_scale: 1, reduce_motion: false,
   home_sections: ['continuar', 'metas', 'revisoes', 'trilha', 'ferramentas'], daily_goal_min: 60,
-  focus_minutes: 25, short_break_min: 5, long_break_min: 15, last_view: null
+  focus_minutes: 25, short_break_min: 5, long_break_min: 15, last_view: null,
+  background: 'none', radius: 'normal', font_family: 'padrao', custom_themes: [], protect_content: true
 };
 
 export const THEMES = [
@@ -17,8 +18,25 @@ export const THEMES = [
   { id: 'sepia', name: 'Sépia (leitura)', prev: ['#f4ecdc', '#fbf6ea', '#8a4b14'] },
   { id: 'ocean', name: 'Oceano', prev: ['#0b1d2a', '#10283a', '#38bdf8'] },
   { id: 'forest', name: 'Floresta', prev: ['#f1f6f0', '#ffffff', '#2f6b3a'] },
-  { id: 'contrast', name: 'Alto contraste', prev: ['#000000', '#000000', '#ffd400'] }
+  { id: 'contrast', name: 'Alto contraste', prev: ['#000000', '#000000', '#ffd400'] },
+  { id: 'azul', name: 'Azul', prev: ['#eef4ff', '#ffffff', '#1d5fd6'] },
+  { id: 'preto', name: 'Preto', prev: ['#000000', '#0d0d0f', '#5b8cff'] },
+  { id: 'meia-noite', name: 'Meia-noite', prev: ['#0b1026', '#121a3a', '#8fa8ff'] },
+  { id: 'rosa', name: 'Rosa', prev: ['#fff1f6', '#ffffff', '#c2186b'] },
+  { id: 'roxo', name: 'Roxo', prev: ['#f5f1ff', '#ffffff', '#6b3fd4'] },
+  { id: 'lilas', name: 'Lilás', prev: ['#f8f4fc', '#ffffff', '#9255c9'] },
+  { id: 'verde', name: 'Verde', prev: ['#effaf3', '#ffffff', '#13804a'] },
+  { id: 'menta', name: 'Menta', prev: ['#effbf8', '#ffffff', '#0c8a78'] },
+  { id: 'laranja', name: 'Laranja', prev: ['#fff5ec', '#ffffff', '#d4570f'] },
+  { id: 'vermelho', name: 'Vermelho', prev: ['#fff2f1', '#ffffff', '#c62a22'] },
+  { id: 'girassol', name: 'Girassol', prev: ['#fffaea', '#ffffff', '#a86c00'] },
+  { id: 'cafe', name: 'Café', prev: ['#1b1410', '#261c16', '#e0a46b'] }
 ];
+export const BACKGROUNDS = [['none', 'Liso'], ['pontos', 'Pontinhos'], ['grade', 'Quadriculado'], ['cadernos', 'Pauta de caderno'], ['degrade', 'Degradê'], ['ondas', 'Luzes suaves'], ['estrelas', 'Estrelinhas']];
+export const FONTS = [['padrao', 'Padrão'], ['arredondada', 'Arredondada'], ['leitura', 'Para leitura longa'], ['dislexia', 'Mais legível (dislexia)']];
+export const RADII = [['reto', 'Retos'], ['normal', 'Normais'], ['redondo', 'Bem redondos']];
+// Campos que formam um "tema salvo" pelo aluno
+export const THEME_FIELDS = ['theme', 'color_primary', 'color_secondary', 'color_accent', 'background', 'radius', 'font_family', 'card_style'];
 export const PALETTE = ['#2340b8', '#4f46e5', '#7b3fb8', '#b8407b', '#c2362f', '#d9480f', '#b7791f', '#1f8a4c', '#0e7c86', '#0369a1', '#334155', '#ffd23f'];
 
 let current = { ...DEFAULTS };
@@ -57,6 +75,9 @@ export function apply(s = current) {
   root.dataset.cards = s.card_style || 'elevated';
   root.dataset.density = s.density || 'comfortable';
   root.dataset.motion = s.reduce_motion ? 'reduce' : 'normal';
+  root.dataset.bg = s.background || 'none';
+  root.dataset.radius = s.radius || 'normal';
+  root.dataset.font = s.font_family || 'padrao';
   root.style.fontSize = `${Math.round(16 * (Number(s.font_scale) || 1))}px`;
   root.style.setProperty('--fs', `${(15 * (Number(s.font_scale) || 1)).toFixed(1)}px`);
   const set = (v, name, ink) => {

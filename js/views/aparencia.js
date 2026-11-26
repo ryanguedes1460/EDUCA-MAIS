@@ -1,6 +1,6 @@
 // Personalização: tema, cores (paleta + cor livre), cartões, densidade, letra,
 // movimento, modo de dispositivo e organização da tela inicial. Salvo na conta.
-import { html, setHTML, actions, toast } from '../core/util.js';
+import { html, setHTML, actions, toast, formDialog, confirmDialog } from '../core/util.js';
 import { icon } from '../core/icones.js';
 import * as aparencia from '../core/aparencia.js';
 import * as auth from '../core/auth.js';
@@ -25,7 +25,22 @@ export default {
         </section>
 
         <section class="card stack" aria-labelledby="h-theme"><h2 id="h-theme">Tema</h2>
+          <p class="muted small">Escolha um tema pronto. Depois, se quiser, mude as cores, o fundo e a letra logo abaixo e salve como "Meu tema".</p>
           <div class="grid g4">${aparencia.THEMES.map(t => html`<button type="button" class="theme-opt" data-action="theme" data-v="${t.id}" aria-pressed="${s.theme === t.id}"><span class="prev" style="background:${t.prev[0]}"><i style="background:${t.prev[1]}"></i><i style="background:${t.prev[2]}"></i></span><b>${t.name}</b></button>`)}</div>
+        </section>
+
+        <section class="card stack" aria-labelledby="h-meus"><h2 id="h-meus">Meus temas</h2>
+          <p class="muted small">Guarde a combinação atual (tema, cores, fundo, cantos e letra) para trocar com um toque. Até 12 temas.</p>
+          ${(s.custom_themes || []).length ? html`<div class="grid g4">${s.custom_themes.map((t, i) => html`<div class="theme-opt" style="display:grid;gap:6px"><button type="button" class="linkbtn" data-action="useCustom" data-i="${i}" style="display:grid;gap:6px;text-align:left"><span class="prev" style="background:${(aparencia.THEMES.find(x => x.id === t.theme) || aparencia.THEMES[0]).prev[0]}"><i style="background:${t.color_secondary || (aparencia.THEMES.find(x => x.id === t.theme) || aparencia.THEMES[0]).prev[1]}"></i><i style="background:${t.color_primary || (aparencia.THEMES.find(x => x.id === t.theme) || aparencia.THEMES[0]).prev[2]}"></i></span><b>${t.name}</b></button><button type="button" class="linkbtn small" data-action="delCustom" data-i="${i}" aria-label="Apagar o tema ${t.name}">apagar</button></div>`)}</div>` : html`<p class="small">Você ainda não salvou nenhum tema.</p>`}
+          <div><button class="btn sm" type="button" data-action="saveCustom" ${(s.custom_themes || []).length >= 12 ? 'disabled' : ''}>Salvar a aparência atual como tema</button></div>
+        </section>
+
+        <section class="card stack" aria-labelledby="h-fundo"><h2 id="h-fundo">Fundo, cantos e letra</h2>
+          <div class="form-grid">
+            <label class="f">Fundo da tela<select class="input" data-pref="background">${aparencia.BACKGROUNDS.map(([v, n]) => html`<option value="${v}" ${(s.background || 'none') === v ? 'selected' : ''}>${n}</option>`)}</select></label>
+            <label class="f">Cantos dos cartões<select class="input" data-pref="radius">${aparencia.RADII.map(([v, n]) => html`<option value="${v}" ${(s.radius || 'normal') === v ? 'selected' : ''}>${n}</option>`)}</select></label>
+            <label class="f">Tipo de letra<select class="input" data-pref="font_family">${aparencia.FONTS.map(([v, n]) => html`<option value="${v}" ${(s.font_family || 'padrao') === v ? 'selected' : ''}>${n}</option>`)}</select></label>
+          </div>
         </section>
 
         <section class="card stack" aria-labelledby="h-cor"><h2 id="h-cor">Cores</h2>
@@ -64,7 +79,16 @@ export default {
         const i = order.indexOf(b.dataset.k), j = i + +b.dataset.d; [order[i], order[j]] = [order[j], order[i]];
         set({ home_sections: order.filter(k => (s.home_sections || []).includes(k)) });
       },
-      reset() { const d = aparencia.DEFAULTS; set({ theme: d.theme, color_primary: null, color_secondary: null, color_accent: null, device_mode: 'auto', card_style: d.card_style, density: d.density, font_scale: 1, reduce_motion: false, home_sections: d.home_sections }); }
+      reset() { const d = aparencia.DEFAULTS; set({ theme: d.theme, color_primary: null, color_secondary: null, color_accent: null, device_mode: 'auto', card_style: d.card_style, density: d.density, font_scale: 1, reduce_motion: false, home_sections: d.home_sections, background: 'none', radius: 'normal', font_family: 'padrao' }); },
+      async saveCustom() {
+        const fd = await formDialog('Salvar meu tema', html`<label class="f">Nome do tema<input class="input" name="name" required maxlength="30" placeholder="Ex.: Meu azul favorito"></label>`, { validate: f => String(f.get('name')).trim() ? null : 'Dê um nome ao tema.' });
+        if (!fd) return;
+        const cur = aparencia.settings(); const t = { name: String(fd.get('name')).trim().slice(0, 30) };
+        for (const k of aparencia.THEME_FIELDS) t[k] = cur[k] ?? null;
+        set({ custom_themes: [...(cur.custom_themes || []), t].slice(0, 12) });
+      },
+      useCustom(b) { const t = (aparencia.settings().custom_themes || [])[+b.dataset.i]; if (!t) return; const patch = {}; for (const k of aparencia.THEME_FIELDS) if (k in t) patch[k] = t[k]; set(patch); },
+      async delCustom(b) { const list = [...(aparencia.settings().custom_themes || [])]; const t = list[+b.dataset.i]; if (t && await confirmDialog(`Apagar o tema "${t.name}"?`, { ok: 'Apagar', danger: true })) { list.splice(+b.dataset.i, 1); set({ custom_themes: list }); } }
     });
     draw();
     const onDev = () => { const x = el.querySelector('#devNow'); if (x) x.textContent = { desktop: 'Computador', tablet: 'Tablet', mobile: 'Celular' }[document.documentElement.dataset.device]; };

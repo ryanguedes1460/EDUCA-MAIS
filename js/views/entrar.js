@@ -56,10 +56,8 @@ export default {
             <button type="button" role="tab" aria-selected="${tab === 'recuperar'}" data-tab="recuperar">Esqueci a senha</button></div>` : ''}
           <div id="authBody"></div>
         </div>
-        ${tab !== 'nova-senha' ? html`<p class="muted small" style="text-align:center">Prefere testar antes? <button class="linkbtn" type="button" id="guest">Usar sem conta</button> (os dados ficam só neste aparelho).</p>` : ''}
       </div>`);
       el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; auth.state.urlError = ''; draw(); });
-      const g = $('#guest', el); if (g) g.onclick = () => { ctx.chooseGuest(true); ctx.go('inicio'); };
       forms[tab]($('#authBody', el));
     };
 

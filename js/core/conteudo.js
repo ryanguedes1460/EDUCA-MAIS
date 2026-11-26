@@ -3,7 +3,9 @@
 // Sem conta: conteúdo inicial que vem junto com o app.
 import * as store from './store.js';
 import seed from '../data/conteudo-inicial.js';
-import { on } from './bus.js';
+import { on, emit } from './bus.js';
+import * as auth from './auth.js';
+import * as banco from './banco.js';
 
 let cache = null;
 on('content:change', () => { cache = null; });
@@ -11,10 +13,30 @@ on('store:scope', () => { cache = null; });
 
 export async function ensureSeed() {
   const n = (await store.allRaw('questions')).length;
-  if (n) return;
-  for (const t of ['areas', 'subjects', 'topics', 'exam_boards']) await store.putRaw(t, seed[t]);
-  await store.putRaw('questions', seed.questions);
+  if (!n) {
+    for (const t of ['areas', 'subjects', 'topics', 'exam_boards']) await store.putRaw(t, seed[t]);
+    await store.putRaw('questions', seed.questions);
+  }
+  // Sem conta: junta o banco grande de questões, sem travar a abertura do app.
+  // Com conta, o conteúdo vem do servidor (sincronização).
+  if (!auth.isLogged() && !loading && (await store.meta.get('banco_versao', 0)) < banco.VERSAO) loading = carregarBanco().finally(() => { loading = null; });
 }
+let loading = null;
+async function carregarBanco() {
+  const escopo = store.currentScope();
+  try {
+    const b = await banco.baixar();
+    if (store.currentScope() !== escopo) return;
+    await store.putRaw('subjects', b.subjects); await store.putRaw('topics', b.topics);
+    for (let i = 0; i < b.questions.length; i += 500) {
+      if (store.currentScope() !== escopo) return;   // a pessoa entrou na conta no meio: para
+      await store.putRaw('questions', b.questions.slice(i, i + 500));
+    }
+    await store.meta.set('banco_versao', banco.VERSAO);
+    cache = null; emit('content:change');
+  } catch { /* sem internet na primeira vez: tenta de novo na próxima abertura */ }
+}
+export const bancoCarregando = () => loading;
 
 export async function catalog() {
   if (cache) return cache;

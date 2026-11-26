@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DIRS = ['css', 'js', 'vendor', 'icons'];
-const FILES = ['index.html', 'manifest.webmanifest'];
+const FILES = ['index.html', 'manifest.webmanifest', 'conteudo/banco.json'];
 
 export function listAssets() {
   const out = [...FILES];

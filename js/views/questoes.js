@@ -4,7 +4,8 @@ import { html, raw, setHTML, $, actions, toast, norm, plural, friendlyError, uui
 import * as store from '../core/store.js';
 import * as auth from '../core/auth.js';
 import { sb } from '../core/backend.js';
-import { catalog, LEVELS, DIFFICULTY, QTYPES } from '../core/conteudo.js';
+import { catalog, LEVELS, DIFFICULTY, QTYPES, bancoCarregando } from '../core/conteudo.js';
+import { notaTRI } from '../lib/tri.js';
 
 const PAGE = 20;
 let filters = { area: '', subject: '', topic: '', level: '', difficulty: '', board: '', year: '', qtype: '', situacao: '', q: '' };
@@ -76,7 +77,9 @@ async function wrongToFlashcard(q) {
 export default {
   title: 'Questões',
   async render(el, params, ctx) {
+    if (bancoCarregando()) { setHTML(el, html`<div class="card"><h1>Questões</h1><p class="muted">Preparando o banco com milhares de questões neste aparelho. Isso só acontece na primeira vez…</p></div>`); await bancoCarregando(); }
     let cat = await catalog();
+    let porCodigo = null;
     // Retoma uma tentativa guardada (simulado ou lista do professor)
     const resume = async (att, mode, extra = {}) => {
       const answered = (await store.all('answers')).filter(a => a.exam_attempt_id === att.id);
@@ -108,6 +111,11 @@ export default {
         const t = Date.now();
         run = { mode, attempt: att, qs, i: 0, res: [], t0: t, tq: t, active: 0, ...extra };
       }
+    } else if (params[0] === 'materia' && params[1]) {
+      run = null; filters = { ...filters, area: '', subject: params[1], topic: '' }; page = 0;
+    } else if (params[0] === 'codigos' && params[1]) {
+      run = null;
+      porCodigo = params[1].split(',').map(c => cat.questions.find(q => q.code === c.trim().toUpperCase())).filter(Boolean);
     } else if (params[0] !== 'run') run = null;
 
     let timer = null;
@@ -224,7 +232,7 @@ export default {
       const ok = q.options.find(o => o.id === chosen)?.is_correct === true;
       el.querySelectorAll('.opt').forEach(x => { x.disabled = true; x.classList.remove('sel'); const o = q.options.find(o => o.id === x.dataset.o); if (o.is_correct) x.classList.add('ok'); else if (o.id === chosen) x.classList.add('no'); });
       const exp = $('#qExp', el); exp.hidden = false;
-      setHTML(exp, html`<b style="color:${raw(ok ? 'var(--good)' : 'var(--bad)')}">${ok ? 'Correto!' : 'Resposta incorreta.'}</b> ${q.explanation}`);
+      setHTML(exp, html`<b style="color:${raw(ok ? 'var(--good)' : 'var(--bad)')}">${ok ? 'Correto!' : 'Resposta incorreta.'}</b> ${q.explanation}${auth.isLogged() ? html` <a class="small" href="#duvidas/nova/questao/${q.id}">Ainda com dúvida? Pergunte à professora</a>` : ''}`);
       $('#confirmBtn', el).hidden = true; $('#nextBtn', el).hidden = false;
       const hb = $('#hintBtn', el); if (hb) hb.hidden = true;
       loadComments(q);
@@ -260,11 +268,15 @@ export default {
       if (run.attempt) await store.patch('exam_attempts', run.attempt.id, { finished_at: nowISO(), correct: ok, total: n });
       await saveSession();
       const fromList = !!run.assignment;
+      const tri = run.mode === 'simulado' && n >= 5 ? notaTRI(run.qs.map((q, i) => ({ difficulty: q.difficulty, ok: run.res[i] === true ? true : false }))) : null;
+      if (tri && run.attempt) await store.meta.set('tri:' + run.attempt.id, tri.nota);
       history.replaceState(null, '', '#questoes'); // o link "Voltar para Minhas turmas" muda o endereço e abre a tela
       setHTML(el, html`<div class="card stack" style="text-align:center;justify-items:center;padding:32px">
         <span class="eyebrow">Resultado ${run.mode === 'simulado' ? 'do simulado' : 'da prática'}</span>
         <div style="font-family:var(--f-display);font-size:3.2rem;font-weight:800" class="num">${ok}/${n}</div>
         <p class="muted num">${Math.round(ok / n * 100)}% de acerto em ${Math.floor(secs / 60)} min ${secs % 60} s</p>
+        ${tri ? html`<div class="card stack" style="max-width:460px;text-align:left"><div class="row between"><b>Nota estimada estilo TRI</b><span class="num" style="font-family:var(--f-display);font-size:1.8rem;font-weight:800">${tri.nota}</span></div>
+          <p class="small muted">Como no ENEM, acertar questões fáceis vale mais para a coerência da nota, e acertar difíceis errando fáceis parece chute.${tri.coerencia === 'baixa' ? ' Neste simulado você errou questões fáceis e acertou difíceis, por isso a nota ficou menor.' : ''} É uma estimativa para treino, não a nota oficial.</p></div>` : ''}
         <div style="width:min(440px,100%);text-align:left" class="stack">${Object.entries(bySubj).map(([s, [a, b]]) => html`<div><div class="row between small"><span>${s}</span><span class="num muted">${a}/${b}</span></div><div class="bar"><i style="width:${Math.round(a / b * 100)}%;background:${raw(a === b ? 'var(--good)' : a === 0 ? 'var(--bad)' : 'var(--warn)')}"></i></div></div>`)}</div>
         <p style="max-width:56ch">${weak.length ? html`Vale reforçar <b>${weak.join(', ')}</b>. As questões erradas viraram flashcards no baralho <b>Questões que errei</b>.` : 'Mandou muito bem! Tente outro nível para se desafiar.'}</p>
         <div class="row" style="justify-content:center">${fromList ? html`<a class="btn" href="#turmas">Voltar para Minhas turmas</a>` : html`<button class="btn" type="button" data-action="back">Voltar ao banco</button>`}${weak.length ? html`<a class="btn ghost" href="#flashcards">Revisar meus erros</a>` : ''}<a class="btn ghost" href="#desempenho">Ver desempenho</a></div></div>`);
@@ -332,7 +344,7 @@ export default {
     let st; el.addEventListener('input', e => { if (e.target.dataset.oninput === 'search') { clearTimeout(st); st = setTimeout(async () => { filters.q = e.target.value; page = 0; const pos = e.target.selectionStart; await drawBank(); const i = el.querySelector('[name=q]'); i.focus(); i.setSelectionRange(pos, pos); }, 250); } });
     el.addEventListener('submit', e => { if (e.target.id === 'filters') e.preventDefault(); });
 
-    if (run) drawQuestion(); else await drawBank();
+    if (run) drawQuestion(); else if (porCodigo?.length) await startRun('pratica', porCodigo); else await drawBank();
     return () => { stopTimer(); if (run) saveSession(); };
   }
 };

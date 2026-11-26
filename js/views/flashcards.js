@@ -35,7 +35,7 @@ export default {
       setHTML(el, html`<div class="stack" style="gap:var(--gap)">
         <div class="head"><div><span class="eyebrow">Memorização</span><h1>Flashcards</h1>
           <p>Revisão espaçada: cada cartão volta logo antes de você esquecer. Avalie com sinceridade; o intervalo se ajusta ao seu desempenho.</p></div>
-          <div class="row"><button class="btn" type="button" data-action="newCard">Novo cartão</button><button class="btn ghost" type="button" data-action="newDeck">Nova coleção</button></div></div>
+          <div class="row"><button class="btn" type="button" data-action="autoDeck">Criar cartões de um tema</button><button class="btn ghost" type="button" data-action="newCard">Novo cartão</button><button class="btn ghost" type="button" data-action="newDeck">Nova coleção</button></div></div>
         <div class="split">
           <div class="card stack sticky">
             <h3>Coleções</h3>
@@ -153,6 +153,26 @@ export default {
       async editCard(b) { cardForm(await store.get('flashcards', b.dataset.id)); },
       async delCard(b) { if (await confirmDialog('Excluir este cartão?', { ok: 'Excluir', danger: true })) { await store.remove('flashcards', b.dataset.id); queue = []; toast('Cartão excluído'); draw(); } },
       async favCard(b) { const c = await store.get('flashcards', b.dataset.id); await store.patch('flashcards', c.id, { is_favorite: !c.is_favorite }); draw(); },
+      async autoDeck() {
+        const fd = await formDialog('Criar cartões de um tema', html`<p class="small">Escreva o assunto da sua prova. A plataforma procura no banco de questões e monta uma coleção de cartões com a pergunta na frente e a resposta explicada no verso.</p>
+          <label class="f">Tema ou assunto<input class="input" name="tema" required maxlength="80" placeholder="Ex.: Leis de Newton, porcentagem, crase, Era Vargas"></label>
+          <label class="f">Quantos cartões<select class="input" name="n"><option>10</option><option selected>20</option><option>30</option></select></label>`, { ok: 'Criar cartões', validate: f => String(f.get('tema')).trim().length >= 3 ? null : 'Escreva o tema.' });
+        if (!fd) return;
+        const tema = String(fd.get('tema')).trim(), n = +fd.get('n') || 20;
+        const cat = await catalog();
+        const palavras = norm(tema).split(/\s+/).filter(w => w.length > 2);
+        const texto = q => norm([q.theme, cat.topic(q.topic_id)?.name, cat.subject(q.subject_id)?.name, q.statement, q.explanation].join(' '));
+        let achadas = cat.bank.filter(q => { const t = texto(q); return palavras.every(w => t.includes(w)); });
+        if (!achadas.length) achadas = cat.bank.filter(q => { const t = texto(q); return palavras.some(w => t.includes(w)); });
+        if (!achadas.length) return toast('Não encontrei esse tema no banco. Tente outra palavra (ex.: "Newton", "juros").', 3500);
+        const escolhidas = achadas.sort(() => Math.random() - 0.5).slice(0, n);
+        const deck = await store.put('decks', { name: ('Tema: ' + tema).slice(0, 60), subject_id: escolhidas[0].subject_id, kind: 'user', color: null, is_favorite: false });
+        for (const q of escolhidas) {
+          const right = q.options.find(o => o.is_correct);
+          await store.put('flashcards', { deck_id: deck.id, front: q.statement.slice(0, 1000), back: `${right ? right.body + '\n\n' : ''}${q.explanation}`.slice(0, 3000), subject_id: q.subject_id, is_favorite: false, source_question_id: null, ease: 2.5, interval_days: 0, repetitions: 0, lapses: 0, due_at: new Date().toISOString(), last_reviewed_at: null });
+        }
+        toast(`${escolhidas.length} cartões criados na coleção "${deck.name}"`, 3000); draw();
+      },
       async newDeck() {
         const fd = await formDialog('Nova coleção', html`<label class="f">Nome<input class="input" name="name" required maxlength="60"></label><label class="f">Disciplina (opcional)<select class="input" name="subject"><option value="">Nenhuma</option>${cat.subjects.map(s => html`<option value="${s.id}">${s.name}</option>`)}</select></label>`, { ok: 'Criar', validate: f => String(f.get('name')).trim() ? null : 'Dê um nome à coleção.' });
         if (!fd) return;

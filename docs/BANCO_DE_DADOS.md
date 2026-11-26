@@ -57,32 +57,19 @@ Detalhes e regras: [SISTEMA_PROFESSORES.md](SISTEMA_PROFESSORES.md).
 4. Conflito: vence a edição mais recente; se o aparelho tem uma alteração mais nova ainda não enviada, ela é preservada.
 5. O que o servidor recusar (ex.: limite atingido) fica em "não enviados" na tela **Conta**, com opção de tentar de novo ou descartar.
 
-## Backup
-**Automático** (recomendado): `.github/workflows/backup.yml` roda todo domingo, gera os arquivos com `supabase db dump`, criptografa com a frase `BACKUP_PASSPHRASE` (AES-256) e guarda como "artifact" do GitHub Actions por 90 dias. Precisa dos segredos descritos em [CONFIGURACAO.md](CONFIGURACAO.md#7-backup-automático-recomendado). O arquivo é criptografado porque repositórios públicos permitem baixar artifacts.
+## Cópias de segurança
+Na versão 1.2 a rotina de backup do repositório (`backup.yml`) e o "baixar/restaurar meus dados" da tela Conta foram retirados, a pedido da administração. Os dados de cada aluno ficam na conta, no Supabase.
+- Se um aluno pedir uma cópia dos próprios dados, a administração pode consultar as tabelas dele no painel do Supabase.
+- No plano Pro, o Supabase faz cópia diária e permite voltar no tempo pelo painel (Database > Backups).
+- O arquivo `supabase/pos-restauracao.sql` continua no repositório para o caso de restaurar uma cópia feita pelo painel.
 
-**Manual**: na tela **Conta**, cada aluno baixa os próprios dados (JSON) e pode restaurá-los.
+## Instalar num projeto Supabase novo (1.2)
+No SQL Editor do projeto novo, rode nesta ordem:
+1. `supabase/instalar.sql` (todas as tabelas, regras e funções).
+2. `supabase/banco-de-questoes/parte-01.sql` até `parte-05.sql` (as 2.767 questões; cada parte pode ser rodada de novo sem duplicar).
+3. `select public.bootstrap_admin('SEU-EMAIL', 'Ryan');` depois de criar a sua conta pelo site.
 
-**Não incluído no backup do banco**: as imagens e materiais enviados (Storage). Guarde os originais, ou baixe pelo painel do Supabase (Storage) de tempos em tempos.
-
-## Recuperação
-1. Baixe o artifact em GitHub > Actions > Backup do banco > (execução) > Artifacts.
-2. Descriptografe (precisa do GnuPG instalado):
-   ```bash
-   gpg --decrypt --batch --passphrase 'SUA FRASE' backup.tar.gz.gpg > backup.tar.gz && tar xzf backup.tar.gz
-   ```
-3. Restaure num projeto Supabase (o mesmo ou um novo), usando a connection string dele:
-   ```bash
-   psql --single-transaction --variable ON_ERROR_STOP=1 \
-     --file roles.sql --file schema.sql \
-     --command 'SET session_replication_role = replica' \
-     --file data.sql --dbname "$NOVA_DB_URL"
-   ```
-4. No SQL Editor do projeto, rode o arquivo [`supabase/pos-restauracao.sql`](../supabase/pos-restauracao.sql). Ele recria o gatilho que cria o perfil no cadastro e as regras de acesso aos arquivos, que ficam fora do backup do esquema `public`. Sem este passo, novos cadastros não funcionam.
-5. Se for um projeto novo, atualize `config.js` com a URL e a chave pública dele, e refaça o passo 3 de CONFIGURACAO.md (login).
-
-Este procedimento foi testado: restauramos uma cópia num banco vazio, rodamos o pós-restauração, e os 39 testes do banco que existiam na 1.0 passaram (contas, respostas e questões iguais às de antes). O procedimento ainda não foi repetido com as migrações 7 e 8.
-
-No plano Pro, o Supabase também faz backup diário e permite voltar no tempo pelo painel (Database > Backups).
+Contas novas entram **aguardando liberação** (configuração `liberacao_manual`). Para desligar: `update public.app_settings set value = 'false'::jsonb where key = 'liberacao_manual';`
 
 ## Mudanças na estrutura
 Crie um arquivo novo em `supabase/migrations/` (nunca edite um já aplicado), rode `npm run build` e `npm run test:banco`. Para aplicar no projeto real, cole só a migração nova no SQL Editor.

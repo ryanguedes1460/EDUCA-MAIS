@@ -16,7 +16,7 @@ Regras combinadas: a `main` só muda com autorização expressa; nada é instala
 |---|---|
 | [CONFIGURACAO.md](CONFIGURACAO.md) | Colocar no ar: Supabase, e-mail, primeiro administrador |
 | [ARQUITETURA.md](ARQUITETURA.md) | Como o app é organizado por dentro |
-| [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md) | Tabelas, relações, sincronização, backup e recuperação |
+| [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md) | Tabelas, relações, sincronização e instalação |
 | [SEGURANCA.md](SEGURANCA.md) | Proteções e limites honestos |
 | [SISTEMA_ALUNOS.md](SISTEMA_ALUNOS.md) | O que o aluno faz, Minhas turmas, privacidade |
 | [SISTEMA_PROFESSORES.md](SISTEMA_PROFESSORES.md) | Banco próprio, listas, turmas, regras |
@@ -36,13 +36,13 @@ Regras combinadas: a `main` só muda com autorização expressa; nada é instala
 ## Pendências
 1. **Instalar no Supabase real**: o instalador da 1.x foi feito para um projeto vazio. O projeto real já tem `student_data` e `admins` da 0.3, então é preciso um instalador adaptado que não apague nada e reconheça os administradores atuais. Depende do resultado das consultas só de leitura ("Passo 0") pedidas à responsável.
 2. **Migração dos dados da 0.3**: copiar o conteúdo de `student_data` para as tabelas novas, sem apagar `student_data` (fica como cópia de segurança). Ainda não escrito: depende do formato real dos dados.
-3. **GitHub Actions**: os testes e o backup automáticos nunca rodaram no GitHub; provavelmente o Actions está desligado no repositório.
+3. **GitHub Actions**: os testes automáticos nunca rodaram no GitHub; provavelmente o Actions está desligado no repositório.
 4. **LGPD**: pergunta de idade com consentimento do responsável para menores de 13 anos, e aviso de privacidade completo.
 5. **Ambiente de testes separado**: recomendado criar um segundo projeto Supabase (grátis) só para testes antes de mexer no real.
 6. Professores: envio de PDFs, avisos de lista nova, tela no painel para ver turmas e listas de qualquer professor.
 7. Testes em Safari/iPhone e Firefox (só Chromium é automatizado).
 
 ## Como publicar (quando autorizado)
-1. Instalar no Supabase real com o instalador adaptado (pendência 1), depois de um backup.
+1. Instalar no Supabase real num projeto Supabase novo (ver BANCO_DE_DADOS.md), sem mexer no projeto que está no ar.
 2. Testar o site da branch apontando para o projeto real (ou para o projeto de testes).
 3. Juntar a branch na `main` (PR #1). O GitHub Pages publica sozinho.

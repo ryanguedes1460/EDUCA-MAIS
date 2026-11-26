@@ -13,6 +13,12 @@ async function until(fn, timeout = 15000) {
 }
 const uid = () => randomUUID().slice(0, 8);
 before(setup);
+// Cria um aluno confirmado e entra com ele (o app não tem mais "usar sem conta").
+async function entrarAluno(page) {
+  const e = `rapido-${uid()}@teste.educamais.dev`;
+  await createConfirmedUser('Aluno Rápido', e, 'senhaRapida1');
+  await login(page, e, 'senhaRapida1');
+}
 after(teardown);
 
 async function answerFirstQuestionWrong(page) {
@@ -33,21 +39,14 @@ describe('fluxo completo do estudante', () => {
   const pass1 = 'primeira123', pass2 = 'segunda456';
   let ctxA, A;
 
-  test('sem conta: estuda, erra uma questão e ela vira flashcard; dados persistem ao recarregar', async () => {
+  test('sem conta, o app sempre abre na tela de entrada', async () => {
     ({ context: ctxA, page: A } = await newPage());
-    await open(A, 'entrar');
-    await A.click('#guest');
-    await A.waitForSelector('html[data-view="inicio"]');
-    await answerFirstQuestionWrong(A);
-    assert.match(await A.innerText('#qExp'), /incorreta/);
-    await A.reload(); await A.waitForSelector('html[data-ready="1"]');
-    await go(A, 'flashcards');
-    assert.match(await A.innerText('#view'), /Questões que errei/);
-    await go(A, 'desempenho');
-    assert.match(await A.innerText('#view'), /questões respondidas/);
+    await open(A, 'questoes');
+    assert.equal(await A.getAttribute('html', 'data-view'), 'entrar');
+    assert.equal(await A.locator('#guest').count(), 0, 'não existe mais "usar sem conta"');
   });
 
-  test('cadastro com confirmação por e-mail e entrada na conta, levando os dados do aparelho', async () => {
+  test('cadastro com confirmação por e-mail e entrada na conta', async () => {
     await go(A, 'entrar');
     await A.click('[data-tab=cadastro]');
     await A.fill('input[name=name]', 'Joana Teste');
@@ -62,15 +61,24 @@ describe('fluxo completo do estudante', () => {
     const link = linkFrom(mail);
     assert.match(link, /type=signup/);
     await A.goto(link);
-    // pergunta se quer levar os dados feitos sem conta
-    await A.waitForSelector('dialog[open]', { timeout: 15000 });
-    assert.match(await A.innerText('dialog[open]'), /registros de estudo/);
-    await A.click('dialog[open] [data-ok]');
+    await A.waitForSelector('html[data-view="inicio"]', { timeout: 15000 });
     await waitSynced(A, 20000);
     assert.match(await A.innerText('#who'), /Joana Teste/);
     const { data: u } = await serviceClient().auth.admin.listUsers();
+    assert.ok(u.users.find(x => x.email === email).email_confirmed_at);
+  });
+
+  test('erra uma questão e ela vira flashcard; os dados persistem e vão para a nuvem', async () => {
+    await answerFirstQuestionWrong(A);
+    assert.match(await A.innerText('#qExp'), /incorreta/);
+    await waitSynced(A, 20000);
+    await A.reload(); await A.waitForSelector('html[data-ready="1"]');
+    await go(A, 'flashcards');
+    assert.match(await A.innerText('#view'), /Questões que errei/);
+    await go(A, 'resultados/respostas');
+    assert.match(await A.innerText('#view'), /questões respondidas/);
+    const { data: u } = await serviceClient().auth.admin.listUsers();
     const me = u.users.find(x => x.email === email);
-    assert.ok(me.email_confirmed_at);
     await until(() => sql(`select count(*) from public.answers where user_id = '${me.id}'`) === '1');
     assert.equal(sql(`select count(*) from public.flashcards where user_id = '${me.id}' and source_question_id is not null`), '1');
     assert.equal(sql(`select is_correct from public.answers where user_id = '${me.id}'`), 'f');
@@ -255,7 +263,7 @@ describe('administração e permissões', () => {
 describe('interface, segurança e offline', () => {
   test('modos de dispositivo: detecção automática e escolha manual', async () => {
     const { context, page } = await newPage({ context: { viewport: { width: 390, height: 800 } } });
-    await open(page, 'entrar'); await page.click('#guest');
+    await entrarAluno(page);
     assert.equal(await page.getAttribute('html', 'data-device'), 'mobile');
     assert.ok(await page.locator('.nav-more').isVisible());
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
@@ -280,7 +288,7 @@ describe('interface, segurança e offline', () => {
 
   test('texto malicioso não executa código (XSS)', async () => {
     const { context, page } = await newPage();
-    await open(page, 'entrar'); await page.click('#guest');
+    await entrarAluno(page);
     await go(page, 'anotacoes');
     await page.click('[data-action=new]');
     await page.fill('#noteTitle', '<img src=x onerror="window.__xss=1">');
@@ -294,7 +302,7 @@ describe('interface, segurança e offline', () => {
 
   test('funciona offline depois da primeira visita (service worker)', async () => {
     const { context, page } = await newPage({ sw: true });
-    await open(page, 'entrar'); await page.click('#guest');
+    await entrarAluno(page);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.reload(); await page.waitForSelector('html[data-ready="1"]');
     await context.setOffline(true);
@@ -308,9 +316,39 @@ describe('interface, segurança e offline', () => {
     const { context, page } = await newPage();
     const csp = [];
     page.on('console', m => { if (/Content Security Policy/i.test(m.text())) csp.push(m.text()); });
-    await open(page, 'entrar'); await page.click('#guest');
-    for (const v of ['questoes', 'flashcards', 'plano', 'foco', 'anotacoes', 'desempenho', 'aparencia', 'conta']) await go(page, v);
+    await entrarAluno(page);
+    for (const v of ['questoes', 'flashcards', 'plano', 'foco', 'anotacoes', 'desempenho', 'resultados', 'resultados/flashcards', 'redacao', 'aulas', 'duvidas', 'materiais', 'aparencia', 'conta']) await go(page, v);
     assert.deepEqual(csp, []);
+    assert.deepEqual(page.errors, []);
+    await context.close();
+  });
+});
+
+describe('versão 1.2: telas novas', () => {
+  test('cronograma cabe no tablet e no computador, e o automático gera tarefas', async () => {
+    const { context, page } = await newPage({ context: { viewport: { width: 1024, height: 800 } } });
+    await entrarAluno(page);
+    await go(page, 'plano');
+    await page.click('[data-action=gerar]');
+    await page.waitForSelector('dialog[open]');
+    await page.click('dialog[open] button[type=submit]');
+    await page.waitForSelector('dialog', { state: 'detached' });
+    await page.waitForSelector('.task');
+    const larguras = await page.$$eval('.task', els => els.slice(0, 5).map(e => e.getBoundingClientRect().width));
+    assert.ok(larguras.every(w => w >= 180), 'cada tarefa precisa de espaço para ler: ' + larguras.join(','));
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
+    assert.equal(overflow, false);
+    assert.deepEqual(page.errors, []);
+    await context.close();
+  });
+
+  test('aluno envia dúvida para a professora e vê na lista', async () => {
+    const { context, page } = await newPage();
+    await entrarAluno(page);
+    await go(page, 'duvidas');
+    await page.fill('#nova textarea[name=body]', 'Não entendi porcentagem sucessiva, pode explicar?');
+    await page.click('#nova button[type=submit]');
+    await page.waitForSelector('text=Aguardando resposta');
     assert.deepEqual(page.errors, []);
     await context.close();
   });

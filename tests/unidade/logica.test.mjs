@@ -152,3 +152,62 @@ describe('conteúdo e empacotamento', () => {
     }
   });
 });
+
+// ---------------- 1.2: banco de questões, TRI e cronograma ----------------
+import { expandir, bid } from '../../js/core/banco.js';
+import { notaTRI } from '../../js/lib/tri.js';
+import { montarCronograma } from '../../js/lib/cronograma.js';
+import { readFileSync as rfs } from 'node:fs';
+
+describe('banco de questões 1.2', () => {
+  const raw = JSON.parse(rfs(new URL('../../conteudo/banco.json', import.meta.url), 'utf8'));
+  const b = expandir(raw);
+  test('tem milhares de questões, todas com 5 alternativas e uma correta', () => {
+    assert.ok(b.questions.length >= 2500, `só ${b.questions.length}`);
+    for (const q of b.questions) {
+      assert.equal(q.options.length, 5, q.code);
+      assert.equal(q.options.filter(o => o.is_correct).length, 1, q.code);
+      assert.equal(new Set(q.options.map(o => o.body)).size, 5, 'alternativas repetidas em ' + q.code);
+      assert.ok(q.explanation && q.statement.length > 10, q.code);
+    }
+  });
+  test('códigos únicos e ids iguais aos do SQL do banco', () => {
+    assert.equal(new Set(b.questions.map(q => q.code)).size, b.questions.length);
+    const sql = rfs(new URL('../../supabase/banco-de-questoes/parte-01.sql', import.meta.url), 'utf8');
+    assert.ok(sql.includes(`'${bid(1)}', '${b.questions[0].code}'`));
+  });
+  test('cobre todas as áreas do ENEM', () => {
+    const mats = new Set(b.questions.map(q => q.subject_id));
+    for (const id of [1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 13]) assert.ok(mats.has(id), 'falta a matéria ' + id);
+  });
+});
+
+describe('nota estilo TRI', () => {
+  test('acertar tudo dá nota alta; errar tudo dá nota baixa', () => {
+    const itens = d => [1, 2, 3, 4, 5, 2, 3, 4].map(x => ({ difficulty: x, ok: d }));
+    assert.ok(notaTRI(itens(true)).nota > 650);
+    assert.ok(notaTRI(itens(false)).nota < 450);
+  });
+  test('mesmo número de acertos: coerente vale mais que chute', () => {
+    const coerente = [1, 1, 2, 2, 5, 5].map((d, i) => ({ difficulty: d, ok: i < 4 }));
+    const chute = [1, 1, 2, 2, 5, 5].map((d, i) => ({ difficulty: d, ok: i >= 2 }));
+    assert.ok(notaTRI(coerente).nota > notaTRI(chute).nota);
+    assert.equal(notaTRI(chute).coerencia, 'baixa');
+  });
+});
+
+describe('cronograma automático', () => {
+  test('respeita os dias e o tempo, sem repetir matéria no mesmo dia', () => {
+    const out = montarCronograma({ objetivo: 'enem', dias: [0, 2, 4], inicio: '18:30', horas: 3, bloco: 50, materias: [{ id: 3, name: 'Matemática' }] });
+    assert.ok(out.length >= 9);
+    assert.deepEqual([...new Set(out.map(t => t.weekday))], [0, 2, 4]);
+    for (const d of [0, 2]) { const n = out.filter(t => t.weekday === d).map(t => t.title); assert.equal(new Set(n).size, n.length); }
+    assert.equal(out[0].start_time, '18:30');
+    assert.ok(out.some(t => t.subject_id === 3));
+  });
+  test('usa as matérias do edital com peso', () => {
+    const out = montarCronograma({ edital: 'Direito Penal: 3\nPortuguês: 1', dias: [0, 1, 2, 3], horas: 2, bloco: 50 });
+    const pen = out.filter(t => t.title === 'Direito Penal').length, por = out.filter(t => t.title === 'Português').length;
+    assert.ok(pen > por);
+  });
+});

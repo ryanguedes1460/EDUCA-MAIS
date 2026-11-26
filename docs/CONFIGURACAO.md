@@ -64,17 +64,7 @@ Essa função só funciona pelo SQL Editor (que exige entrar no Supabase). Ningu
 2. Copie a **Secret key** para o Supabase em **Authentication > Attack Protection > Enable Captcha protection** (provedor Turnstile). A chave secreta fica só no Supabase.
 3. Copie a **Site key** (pública) para `turnstileSiteKey` no `config.js`.
 
-## 7. Backup automático (recomendado)
-O plano grátis do Supabase não oferece backup que você possa baixar. O repositório já tem uma rotina (`.github/workflows/backup.yml`) que faz uma cópia criptografada toda semana.
-1. No Supabase, clique em **Connect** (topo da página) > **Session pooler** e copie a "connection string". Troque `[YOUR-PASSWORD]` pela senha do banco do passo 1.
-2. No GitHub: **Settings > Secrets and variables > Actions > New repository secret**:
-   - `SUPABASE_DB_URL`: a connection string.
-   - `BACKUP_PASSPHRASE`: uma frase longa que só você saiba (guarde no gerenciador de senhas: sem ela o backup não abre).
-3. Em **Actions > Backup do banco > Run workflow** rode uma vez para testar.
-
-Como restaurar está em [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação).
-
-## 8. Conferir
+## 7. Conferir
 - Abra o site no celular, crie uma conta de teste, confirme o e-mail, responda uma questão, e abra no computador com a mesma conta: o histórico deve aparecer.
 - No painel do Ryan, **Visão geral** deve mostrar 2 usuários.
 

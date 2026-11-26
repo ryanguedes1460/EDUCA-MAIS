@@ -5,7 +5,7 @@ import { ALL_STORES, USER_TABLES } from './tabelas.js';
 import { emit } from './bus.js';
 import { nowISO, uuid } from './util.js';
 
-const DB_VERSION = 1;
+const DB_VERSION = 2; // 2: progresso das aulas
 let db = null, scope = null;
 
 function openDB(name) {

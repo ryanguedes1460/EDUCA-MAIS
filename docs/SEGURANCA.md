@@ -33,11 +33,10 @@ O site (HTML/JavaScript) é público e qualquer pessoa pode ler o código. Por i
 ## O que depende de configuração (fora do código)
 - SMTP próprio para e-mails de confirmação (ver [CONFIGURACAO.md](CONFIGURACAO.md)).
 - Turnstile, se desejar anti-robô.
-- Backup: o workflow `backup.yml` precisa dos segredos `SUPABASE_DB_URL` e `BACKUP_PASSPHRASE` no GitHub.
 - "Leaked password protection" (bloquear senhas vazadas) só existe no plano Pro do Supabase.
 
 ## Se algo der errado
 1. **Chave secreta vazou**: Supabase > Project Settings > API Keys > gere nova chave e revogue a antiga.
 2. **Conta suspeita**: Administração > Usuários > Bloquear (derruba as sessões). Veja a aba Auditoria.
 3. **Senha do Ryan comprometida**: "Esqueci a senha" no site, e depois Conta > Sessões > Encerrar as outras.
-4. **Dados corrompidos**: restaure o backup ([BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação)).
+4. **Dados corrompidos**: no plano Pro, volte no tempo pelo painel do Supabase (Database > Backups).

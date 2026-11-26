@@ -3,6 +3,9 @@ import { html, setHTML, actions, toast, formDialog, confirmDialog, weekdayIdx, w
 import * as store from '../core/store.js';
 import { goalProgress, GOAL_KINDS } from '../lib/stats.js';
 import { ring } from '../lib/graficos.js';
+import { catalog } from '../core/conteudo.js';
+
+import { OBJETIVOS, montarCronograma } from '../lib/cronograma.js';
 
 const DAYS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const COLORS = ['#2340b8', '#1f8a4c', '#b7791f', '#c2362f', '#7b3fb8', '#0e7c86', '#b8407b'];
@@ -29,12 +32,13 @@ export default {
             <label class="f">Duração (min)<input class="input" name="duration_min" type="number" min="5" max="600" step="5" value="50" required></label>
             <button class="btn" type="submit">Adicionar</button>
           </form>
-          <div class="row between"><span class="chip num">${done} de ${tasks.length} concluídas nesta semana</span>${done ? html`<button class="btn ghost sm" type="button" data-action="resetWeek">Desmarcar todas</button>` : ''}</div>
+          <div class="card row between"><span><b>Cronograma automático</b><br><span class="muted small">Diga para que você estuda (ENEM, vestibular, escola ou o edital do concurso) e quanto tempo tem. A plataforma monta a semana.</span></span><button class="btn" type="button" data-action="gerar">Montar meu cronograma</button></div>
+          <div class="row between"><span class="chip num">${done} de ${tasks.length} concluídas nesta semana · ${(tasks.reduce((a, t) => a + (+t.duration_min || 0), 0) / 60).toFixed(1).replace('.', ',')} h planejadas</span>${done ? html`<button class="btn ghost sm" type="button" data-action="resetWeek">Desmarcar todas</button>` : ''}</div>
           <div class="week-scroll"><div class="week">${DAYS.map((d, i) => {
             const list = tasks.filter(t => t.weekday === i).sort((a, b) => a.start_time.localeCompare(b.start_time));
             const mins = list.reduce((s, t) => s + (+t.duration_min || 0), 0);
             return html`<div class="day ${i === today ? 'today' : ''}"><h3>${d}<span class="muted num small">${mins ? (mins / 60).toFixed(1).replace('.', ',') + ' h' : ''}</span></h3>
-              ${list.length ? list.map(t => html`<div class="task ${doneThisWeek(t) ? 'done' : ''}" style="--c:${colorOf(t.title)}"><input type="checkbox" data-action="toggle" data-id="${t.id}" ${doneThisWeek(t) ? 'checked' : ''} aria-label="Concluir ${t.title}"><span><span class="t-name">${t.title}</span><br><span class="t-time">${t.start_time.slice(0, 5)} · ${t.duration_min} min</span></span><span class="row" style="gap:0;flex-wrap:nowrap"><button class="x" type="button" data-action="edit" data-id="${t.id}" aria-label="Editar ${t.title}">✎</button><button class="x" type="button" data-action="del" data-id="${t.id}" aria-label="Remover ${t.title}">×</button></span></div>`) : html`<span class="muted small">Livre</span>`}</div>`;
+              ${list.length ? list.map(t => html`<div class="task ${doneThisWeek(t) ? 'done' : ''}" style="--c:${colorOf(t.title)}"><input type="checkbox" data-action="toggle" data-id="${t.id}" ${doneThisWeek(t) ? 'checked' : ''} aria-label="Concluir ${t.title}"><span><span class="t-name">${t.title}</span><br><span class="t-time">${t.start_time.slice(0, 5)} · ${t.duration_min} min</span>${t.subject_id ? html`<br><a class="small" href="#questoes/materia/${t.subject_id}">praticar questões</a>` : ''}</span><span class="row" style="gap:0;flex-wrap:nowrap"><button class="x" type="button" data-action="edit" data-id="${t.id}" aria-label="Editar ${t.title}">✎</button><button class="x" type="button" data-action="del" data-id="${t.id}" aria-label="Remover ${t.title}">×</button></span></div>`) : html`<span class="muted small">Livre</span>`}</div>`;
           })}</div></div>`
         : html`
           <div class="grid g2">${Object.entries(GOAL_KINDS).map(([kind, info]) => {
@@ -68,6 +72,24 @@ export default {
           <label class="f">Duração (min)<input class="input" name="duration_min" type="number" min="5" max="600" value="${t.duration_min}"></label></div>`,
           { validate: f => String(f.get('title')).trim() ? null : 'Informe a atividade.' });
         if (fd) { await store.patch('plan_tasks', t.id, { title: String(fd.get('title')).trim(), weekday: +fd.get('weekday'), start_time: fd.get('start_time') || '19:00', duration_min: Math.min(600, Math.max(5, +fd.get('duration_min') || 50)) }); draw(); }
+      },
+      async gerar() {
+        const cat = await catalog();
+        const fd = await formDialog('Montar meu cronograma', html`<div class="stack">
+          <label class="f">Estou estudando para<select class="input" name="obj">${Object.entries(OBJETIVOS).map(([k, o]) => html`<option value="${k}">${o.nome}</option>`)}</select></label>
+          <label class="f">Matérias do edital ou da prova (opcional, uma por linha; pode pôr o peso: "Português: 3")<textarea class="input" name="edital" rows="4" maxlength="2000" placeholder="Deixe vazio para usar as matérias do objetivo escolhido"></textarea></label>
+          <fieldset class="stack" style="border:0;padding:0"><legend class="small"><b>Dias livres</b></legend><div class="row">${DAYS.map((d, i) => html`<label class="check"><input type="checkbox" name="dias" value="${i}" ${i < 6 ? 'checked' : ''}> ${d.slice(0, 3)}</label>`)}</div></fieldset>
+          <div class="form-grid"><label class="f">Começo<input class="input" type="time" name="inicio" value="19:00"></label>
+            <label class="f">Horas por dia<select class="input" name="horas">${[1, 1.5, 2, 3, 4, 5, 6].map(h => html`<option value="${h}" ${h === 2 ? 'selected' : ''}>${String(h).replace('.', ',')} h</option>`)}</select></label>
+            <label class="f">Cada bloco<select class="input" name="bloco"><option value="25">25 min</option><option value="50" selected>50 min</option><option value="90">90 min</option></select></label></div>
+          <label class="check"><input type="checkbox" name="substituir" checked> Substituir o cronograma automático anterior (o que você criou à mão fica)</label></div>`, { ok: 'Montar' });
+        if (!fd) return;
+        const dias = fd.getAll('dias').map(Number);
+        if (!dias.length) return toast('Escolha pelo menos um dia.');
+        const blocos = montarCronograma({ objetivo: fd.get('obj'), edital: String(fd.get('edital') || ''), dias, inicio: fd.get('inicio') || '19:00', horas: +fd.get('horas') || 2, bloco: +fd.get('bloco') || 50, materias: cat.subjects });
+        if (fd.get('substituir') === 'on') for (const t of (await store.all('plan_tasks')).filter(t => t.auto)) await store.remove('plan_tasks', t.id);
+        for (const b of blocos) await store.put('plan_tasks', { ...b, done_on: null, auto: true });
+        toast(`Cronograma pronto: ${blocos.length} blocos na semana`); draw();
       },
       async resetWeek() { for (const t of (await store.all('plan_tasks')).filter(doneThisWeek)) await store.patch('plan_tasks', t.id, { done_on: null }); draw(); },
       async goal(b) {

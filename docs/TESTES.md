@@ -49,12 +49,10 @@ Revisão espaçada (5), estatísticas do painel (4), sincronização (4), prote�
 
 Os testes de navegador encontraram e ajudaram a corrigir 2 falhas reais: anotações perdiam o título quando o texto era digitado logo em seguida, e "Sair" avisava pendências que seriam enviadas em segundos.
 
-### Backup e recuperação
-Testado manualmente no banco local: cópia gerada com os mesmos comandos do `backup.yml`, restaurada num banco vazio com o procedimento de [BANCO_DE_DADOS.md](BANCO_DE_DADOS.md#recuperação), seguida de `pos-restauracao.sql`. Contagens iguais às de antes e os 39 testes do banco passaram no banco restaurado.
 
 ## O que não foi testado aqui
 - O projeto Supabase real (`dvzmcvuvpcnfcxjnmvev`), que hoje roda a versão 0.3: o ambiente de desenvolvimento não consegue acessá-lo, e nada da 1.x foi instalado nele. Os testes usam o mesmo software rodando localmente.
 - Envio de e-mail por SMTP real (os testes usam o Mailpit local).
 - Turnstile (precisa das chaves da Cloudflare).
 - Safari/iPhone e Firefox: só Chromium foi automatizado. Recomenda-se abrir o site num iPhone após publicar.
-- Os workflows do GitHub Actions rodam depois do envio; o `backup.yml` só funciona com os segredos configurados.
+- Os workflows do GitHub Actions rodam depois do envio.

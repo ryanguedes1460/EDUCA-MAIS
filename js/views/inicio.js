@@ -7,6 +7,7 @@ import * as aparencia from '../core/aparencia.js';
 import { catalog } from '../core/conteudo.js';
 import { goalProgress, GOAL_KINDS, dueCount, minutesByDay } from '../lib/stats.js';
 import { configured } from '../core/backend.js';
+import * as controles from '../core/controles.js';
 
 const TRILHAS = {
   concurso: ['Concursos', [['Base', 'Língua Portuguesa: interpretação e gramática'], ['Base', 'Raciocínio lógico e matemática'], ['Específica', 'Direito Constitucional e Administrativo'], ['Prática', 'Simulado semanal no estilo da banca'], ['Revisão', 'Flashcards de leis e prazos']]],
@@ -27,6 +28,14 @@ const VIEW_NAMES = { questoes: 'Questões', flashcards: 'Flashcards', plano: 'Pl
 export default {
   title: 'Início',
   async render(el, params, ctx) {
+    if (controles.isPending()) {
+      setHTML(el, html`<div class="stack" style="gap:var(--gap)"><div class="head"><div><span class="eyebrow">Bem-vindo(a)${auth.state.profile?.display_name ? ', ' + auth.state.profile.display_name : ''}</span><h1>Sua conta foi criada!</h1>
+        <p>A professora recebeu o seu cadastro e vai liberar as aulas, os materiais e as ferramentas de estudo da sua conta. Assim que ela liberar, tudo aparece aqui.</p></div></div>
+        <div class="card stack"><h2>Enquanto isso</h2><p>Você já pode deixar a plataforma com a sua cara em <a href="#aparencia">Aparência</a> e conferir seus dados em <a href="#conta">Minha conta</a>.</p>
+        <div><button class="btn" type="button" id="recheck">Verificar se já foi liberada</button></div></div></div>`);
+      el.querySelector('#recheck').onclick = () => controles.load().then(() => { if (controles.isPending()) import('../core/util.js').then(u => u.toast('Ainda aguardando a liberação.')); });
+      return;
+    }
     const draw = async () => {
       const [cards, goals, sessions, answers, reviews, attempts, cat] = await Promise.all([
         store.all('flashcards'), store.all('goals'), store.all('study_sessions'), store.all('answers'), store.all('flashcard_reviews'), store.all('exam_attempts'), catalog()]);

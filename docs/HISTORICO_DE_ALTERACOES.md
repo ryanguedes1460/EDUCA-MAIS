@@ -1,5 +1,26 @@
 # Histórico de alterações
 
+## 1.2.0 (em desenvolvimento, branch `claude/project-thread-miog5u`)
+Ainda não publicada: não está na `main`, no site nem no Supabase real. Vai para um projeto Supabase novo, para não mexer na 0.3 que está no ar.
+
+**Novo**
+- Banco de questões com 2.767 questões originais no estilo ENEM e vestibulares, em 13 matérias (inclui Literatura, Sociologia e Filosofia), com filtros, busca e nota estilo TRI nos simulados.
+- Temas de redação (24 propostas e as 5 competências, sem correção automática).
+- Flashcards criados pela plataforma a partir de um tema digitado.
+- Aba Resultados: horas por mês, registro de cada sessão (dia, hora, matéria), histórico de respostas, simulados e evolução dos flashcards.
+- Cronograma automático pelo objetivo ou pelas matérias e pesos do edital; o quadro da semana se ajusta ao tablet e ao computador.
+- Aulas dentro da plataforma (YouTube, Vimeo ou vídeo próprio sem download), material de apoio, marcar como assistida, questões antes e depois.
+- Tirar dúvidas com a professora, com assistente gratuito que procura explicações parecidas no banco.
+- Painel do Ryan: contas novas aguardando liberação, liberar aulas e materiais por aluno ou por grupo, desligar partes do app por aluno, ver última entrada, última aula e aulas concluídas, responder dúvidas.
+- 12 temas de cor, fundos, cantos e letras.
+- Proteção do conteúdo: sem botão direito, cópia ou arrasto; o conteúdo escurece ao trocar de janela ou apertar a tecla de print; registro de quem abriu cada aula e material.
+
+**Retirado**
+- "Usar sem conta": o app sempre abre na tela de entrada.
+- Backup: a rotina `backup.yml` e o baixar/restaurar dados da tela Conta.
+
+**Testes**: 25 de lógica, 59 do banco e 19 no navegador, todos aprovados.
+
 ## 1.1.0 (em desenvolvimento, branch `claude/project-thread-air5ll`)
 Ainda não publicada: não está na `main`, no site nem no Supabase real.
 

@@ -9,8 +9,10 @@ import * as aparencia from './core/aparencia.js';
 import { ensureSeed } from './core/conteudo.js';
 import { migrateV02 } from './lib/migrar-v02.js';
 import { on, emit } from './core/bus.js';
+import * as controles from './core/controles.js';
+import * as protecao from './core/protecao.js';
 
-export const VERSION = '1.1.0-dev';
+export const VERSION = '1.2.0-dev';
 
 const NAV = [
   { id: 'inicio', name: 'Início', mobile: true },
@@ -20,7 +22,11 @@ const NAV = [
   { id: 'foco', name: 'Foco' },
   { id: 'anotacoes', name: 'Anotações' },
   { id: 'desempenho', name: 'Desempenho', mobile: true },
+  { id: 'resultados', name: 'Resultados' },
+  { id: 'redacao', name: 'Temas de redação' },
+  { id: 'aulas', name: 'Aulas', needs: 'login' },
   { id: 'materiais', name: 'Materiais', needs: 'login' },
+  { id: 'duvidas', name: 'Tirar dúvidas', needs: 'login' },
   { id: 'turmas', name: 'Minhas turmas', needs: 'login' },
   { id: 'professor', name: 'Área do professor', needs: 'teacher.area' },
   { sep: true },
@@ -33,10 +39,11 @@ const VIEWS = {
   flashcards: () => import('./views/flashcards.js'), plano: () => import('./views/plano.js'), foco: () => import('./views/foco.js'),
   anotacoes: () => import('./views/anotacoes.js'), desempenho: () => import('./views/desempenho.js'), materiais: () => import('./views/materiais.js'),
   conta: () => import('./views/conta.js'), aparencia: () => import('./views/aparencia.js'), admin: () => import('./views/admin.js'),
-  turmas: () => import('./views/turmas.js'), professor: () => import('./views/professor.js')
+  turmas: () => import('./views/turmas.js'), professor: () => import('./views/professor.js'),
+  aulas: () => import('./views/aulas.js'), resultados: () => import('./views/resultados.js'), redacao: () => import('./views/redacao.js'), duvidas: () => import('./views/duvidas.js')
 };
 
-const visible = n => !n.needs || (n.needs === 'login' ? auth.isLogged() : auth.can(n.needs));
+const visible = n => (!n.needs || (n.needs === 'login' ? auth.isLogged() : auth.can(n.needs))) && !controles.isBlocked(n.id);
 
 function renderShell() {
   const items = NAV.filter(n => n.sep || visible(n));
@@ -125,11 +132,20 @@ export function parseHash() {
 async function route() {
   const my = ++routing;
   let { view, params } = parseHash();
-  if (configured && !auth.isLogged() && !guestChosen() && view !== 'entrar') view = 'entrar';
+  if (configured && !auth.isLogged() && view !== 'entrar') view = 'entrar'; // sempre a tela de entrada primeiro
   if (auth.state.recovery && view !== 'entrar') { view = 'entrar'; params = ['nova-senha']; }
   if (view === 'professor' && !auth.can('teacher.area')) { view = 'conta'; toast('A área do professor é liberada depois que o administrador aprova o seu pedido (em Minha conta).'); history.replaceState(null, '', '#conta'); }
   if (view === 'admin' && !auth.can('admin.access')) { view = 'inicio'; toast('Área restrita à administração.'); history.replaceState(null, '', '#inicio'); }
-  if ((view === 'materiais' || view === 'turmas') && !auth.isLogged()) { view = 'entrar'; }
+  if (['materiais', 'turmas', 'aulas', 'duvidas'].includes(view) && !auth.isLogged()) { view = 'entrar'; }
+  if (controles.isBlocked(view)) {
+    if (typeof cleanup === 'function') { try { cleanup(); } catch {} } cleanup = null;
+    const o = $('#view'); const e2 = o.cloneNode(false); o.replaceWith(e2);
+    setHTML(e2, controles.isPending()
+      ? html`<div class="card stack" role="status"><h1>Sua conta está quase pronta</h1><p>Recebemos o seu cadastro. Agora a professora vai liberar as aulas, os materiais e as ferramentas da sua conta. Assim que ela liberar, tudo aparece aqui sozinho.</p><div class="row"><button class="btn" type="button" id="recheck">Verificar de novo</button><a class="btn ghost" href="#conta">Minha conta</a></div></div>`
+      : html`<div class="card stack" role="alert"><h1>Parte desativada</h1><p>Esta parte da plataforma não está liberada para a sua conta. Se precisar dela, fale com a administração.</p><div><a class="btn ghost" href="#inicio">Voltar ao início</a></div></div>`);
+    const rc = $('#recheck', e2); if (rc) rc.onclick = () => controles.load().then(() => { if (!controles.isPending()) toast('Conta liberada!'); else toast('Ainda aguardando a liberação.'); });
+    return;
+  }
   if (auth.isBlocked() && view !== 'conta') view = 'bloqueado';
   if (typeof cleanup === 'function') { try { cleanup(); } catch {} } cleanup = null;
   // Cada tela recebe um contêiner novo (evita acumular eventos de telas anteriores)
@@ -185,6 +201,7 @@ async function enterAccount() {
     } else await store.meta.set('local_rows_asked', guestRows);
   }
   await aparencia.load();
+  await controles.load().catch(() => {});
   chooseGuest(false);
   renderShell();
   await sync.syncNow({ content: true });
@@ -201,6 +218,7 @@ async function leaveAccount() {
   await store.useScope('local');
   await ensureSeed();
   await aparencia.load();
+  await controles.load();
   renderShell();
   location.hash = '#entrar';
   route();
@@ -235,6 +253,8 @@ async function boot() {
   renderShell();
   on('sync:status', renderStatus);
   on('content:change', renderBanners);
+  on('controles:change', () => { renderShell(); route(); });
+  protecao.start();
   on('auth:profile', () => { renderWho(); });
   on('auth:change', async ({ event }) => {
     if (event === 'SIGNED_IN' && auth.state.user && store.currentScope() !== auth.state.user.id) await enterAccount();

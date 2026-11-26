@@ -14,6 +14,8 @@ export function env() {
   }
   const out = execFileSync('npx', ['supabase', 'status', '-o', 'json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const j = JSON.parse(out.slice(out.indexOf('{')));
+  // Nos testes antigos as contas novas já entram liberadas; os testes da liberação manual ligam a opção quando precisam.
+  try { execFileSync('psql', [j.DB_URL, '-tAc', "update public.app_settings set value = 'false'::jsonb where key = 'liberacao_manual'"], { stdio: 'ignore' }); } catch { /* banco sem a opção */ }
   cached = { url: j.API_URL, anon: j.ANON_KEY, service: j.SERVICE_ROLE_KEY, db: j.DB_URL, mail: j.MAILPIT_URL || j.INBUCKET_URL };
   return cached;
 }

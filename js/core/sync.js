@@ -103,18 +103,21 @@ export async function pullContent() {
     await store.clearRaw(t);
     await store.putRaw(t, data);
   }
-  let cursor = await store.meta.get('cur:questions', '1970-01-01T00:00:00Z');
-  for (;;) {
+  // Paginação por (updated_at, id): muitas questões podem ter o mesmo updated_at
+  // (ex.: o banco de questões é inserido de uma vez), então não dá para usar só "maior que".
+  const cursor = await store.meta.get('cur:questions', '1970-01-01T00:00:00Z');
+  let maxSeen = cursor;
+  for (let from = 0; ; from += 500) {
     const { data, error } = await sb.from('questions')
       .select('id, code, subject_id, topic_id, level, difficulty, board_id, year, qtype, theme, statement, image_path, image_alt, explanation, hint, source, status, visibility, updated_at, question_options(id, question_id, position, body, is_correct)')
-      .eq('status', 'published').gt('updated_at', cursor).order('updated_at').limit(500);
+      .eq('status', 'published').gte('updated_at', cursor).order('updated_at').order('id').range(from, from + 499);
     if (error) throw error;
     if (!data.length) break;
     await store.putRaw('questions', data.map(q => ({ ...q, options: (q.question_options || []).sort((a, b) => a.position - b.position), question_options: undefined })));
-    cursor = data[data.length - 1].updated_at;
-    await store.meta.set('cur:questions', cursor);
+    maxSeen = data[data.length - 1].updated_at;
     if (data.length < 500) break;
   }
+  await store.meta.set('cur:questions', maxSeen);
   // Remove do aparelho questões que deixaram de estar publicadas
   const ids = new Set();
   for (let from = 0; ; from += 1000) {

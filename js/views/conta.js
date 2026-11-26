@@ -1,5 +1,5 @@
 // Minha conta: perfil, segurança (senha e sessões), sincronização e dados pessoais (LGPD).
-import { html, setHTML, actions, toast, confirmDialog, formDialog, friendlyError, download, fmtDateTime, dayKey } from '../core/util.js';
+import { html, setHTML, actions, toast, confirmDialog, formDialog, friendlyError, fmtDateTime } from '../core/util.js';
 import * as auth from '../core/auth.js';
 import * as store from '../core/store.js';
 import * as sync from '../core/sync.js';
@@ -61,8 +61,7 @@ export default {
           </div>
           <div class="card stack"><h2>Meus dados</h2>
             <p class="small">${counts.answers} respostas · ${counts.flashcards} flashcards · ${counts.flashcard_reviews} revisões · ${counts.notes} anotações · ${counts.study_sessions} sessões de estudo</p>
-            <div class="row"><button class="btn ghost sm" type="button" data-action="export">Baixar meus dados (JSON)</button>${!auth.isLogged() ? html`<label class="btn ghost sm">Restaurar backup<input type="file" accept=".json,application/json" id="restore" hidden></label>` : ''}</div>
-            <p class="muted small">Você pode consultar, corrigir (editando nas telas) e excluir seus dados a qualquer momento.</p>
+            <p class="muted small">${auth.isLogged() ? 'Seus dados ficam guardados na sua conta e voltam sozinhos em qualquer aparelho.' : 'Sem conta, os dados ficam só neste aparelho. Crie uma conta para não perder nada.'} Você pode corrigir (editando nas telas) e excluir seus dados a qualquer momento. Para receber uma cópia, peça à administração.</p>
             <div class="row"><button class="btn ghost sm" type="button" data-action="resetData">Apagar meu histórico de estudo</button>${auth.isLogged() ? html`<button class="btn danger sm" type="button" data-action="deleteAccount">Excluir minha conta</button>` : ''}</div>
           </div>
         </div>
@@ -74,18 +73,6 @@ export default {
         const { error } = await sb.from('profiles').update({ display_name: name, study_profile: f.study_profile.value, school_year: f.school_year.value.trim() || null }).eq('id', auth.state.user.id);
         if (error) return toast(friendlyError(error));
         await auth.loadProfile(); toast('Perfil salvo'); draw();
-      };
-      const r = el.querySelector('#restore');
-      if (r) r.onchange = async () => {
-        const file = r.files[0]; if (!file) return;
-        try {
-          const o = JSON.parse(await file.text());
-          if (o.app !== 'educa-mais' || !o.tabelas) throw new Error();
-          if (!(await confirmDialog(`Restaurar o backup de ${fmtDateTime(o.em)}? Os registros serão somados aos deste aparelho.`, { ok: 'Restaurar' }))) return;
-          let n = 0;
-          for (const [t, rows] of Object.entries(o.tabelas)) if (USER_TABLES[t]) { await store.putRaw(t, rows); n += rows.length; }
-          toast(`${n} registros restaurados`); draw();
-        } catch { toast('Este arquivo não é um backup válido da Educa Mais.'); }
       };
     };
 
@@ -128,18 +115,6 @@ export default {
       async syncNow() { await sync.syncNow({ content: true }); toast(sync.status.state === 'idle' ? 'Sincronizado' : 'Não foi possível sincronizar agora'); draw(); },
       async retry() { await sync.retryRejected(); draw(); },
       async discard() { if (await confirmDialog('Descartar os registros recusados? Eles não serão enviados.', { ok: 'Descartar', danger: true })) { await sync.discardRejected(); draw(); } },
-      async export() {
-        if (auth.isLogged() && navigator.onLine) {
-          const { data, error } = await sb.rpc('export_my_data');
-          if (error) return toast(friendlyError(error));
-          download(`educa-mais-meus-dados-${dayKey()}.json`, JSON.stringify(data, null, 2));
-        } else {
-          const out = { app: 'educa-mais', v: 3, em: new Date().toISOString(), tabelas: {} };
-          for (const t of Object.keys(USER_TABLES)) out.tabelas[t] = await store.allRaw(t);
-          download(`educa-mais-backup-${dayKey()}.json`, JSON.stringify(out));
-        }
-        toast('Arquivo gerado');
-      },
       async resetData() {
         if (!(await confirmDialog('Apagar todo o seu histórico de estudo (respostas, flashcards, revisões, anotações, cronograma, metas e sessões)? A conta continua existindo.', { ok: 'Apagar histórico', danger: true, typed: 'APAGAR' }))) return;
         if (auth.isLogged()) {

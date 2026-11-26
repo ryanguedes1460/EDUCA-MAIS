@@ -6,14 +6,15 @@ export const USER_TABLES = {
   user_settings: {
     kind: 'mutable', conflict: 'user_id', localId: () => 'me',
     cols: ['theme', 'color_primary', 'color_secondary', 'color_accent', 'device_mode', 'card_style', 'density', 'font_scale', 'reduce_motion',
-      'home_sections', 'daily_goal_min', 'focus_minutes', 'short_break_min', 'long_break_min', 'last_view', 'updated_at'],
+      'home_sections', 'daily_goal_min', 'focus_minutes', 'short_break_min', 'long_break_min', 'last_view',
+      'background', 'radius', 'font_family', 'custom_themes', 'protect_content', 'updated_at'],
     fromRemote: r => ({ ...r, id: 'me' })
   },
   decks: { kind: 'mutable', conflict: 'id', cols: ['id', 'name', 'subject_id', 'color', 'is_favorite', 'kind', 'created_at', 'updated_at', 'deleted_at'] },
   flashcards: { kind: 'mutable', conflict: 'id', cols: ['id', 'deck_id', 'front', 'back', 'subject_id', 'is_favorite', 'source_question_id', 'ease', 'interval_days', 'repetitions', 'lapses', 'due_at', 'last_reviewed_at', 'created_at', 'updated_at', 'deleted_at'] },
   flashcard_reviews: { kind: 'append', conflict: 'id', cols: ['id', 'card_id', 'rating', 'interval_before', 'interval_after', 'reviewed_at'] },
   notes: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'body', 'subject_id', 'is_favorite', 'created_at', 'updated_at', 'deleted_at'] },
-  plan_tasks: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'weekday', 'start_time', 'duration_min', 'done_on', 'created_at', 'updated_at', 'deleted_at'] },
+  plan_tasks: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'weekday', 'start_time', 'duration_min', 'done_on', 'subject_id', 'note', 'auto', 'created_at', 'updated_at', 'deleted_at'] },
   goals: {
     kind: 'mutable', conflict: 'user_id,kind', cols: ['kind', 'target', 'active', 'created_at', 'updated_at', 'deleted_at'],
     fromRemote: r => ({ ...r, id: r.kind })
@@ -24,11 +25,15 @@ export const USER_TABLES = {
   },
   exam_attempts: { kind: 'mutable', conflict: 'id', cols: ['id', 'title', 'filters', 'total', 'correct', 'started_at', 'finished_at', 'assignment_id', 'updated_at', 'deleted_at'] },
   answers: { kind: 'append', conflict: 'id', cols: ['id', 'question_id', 'option_id', 'time_spent_ms', 'used_hint', 'mode', 'exam_attempt_id', 'answered_at'] },
-  study_sessions: { kind: 'append', conflict: 'id', cols: ['id', 'kind', 'subject', 'started_at', 'duration_sec'] }
+  study_sessions: { kind: 'append', conflict: 'id', cols: ['id', 'kind', 'subject', 'started_at', 'duration_sec'] },
+  lesson_progress: {
+    kind: 'mutable', conflict: 'user_id,lesson_id', cols: ['lesson_id', 'completed_at', 'created_at', 'updated_at', 'deleted_at'],
+    toRemote: r => ({ ...r, lesson_id: r.id }), fromRemote: r => ({ ...r, id: r.lesson_id })
+  }
 };
 
 // Ordem de envio respeita as chaves estrangeiras (baralho antes do cartão etc.)
-export const PUSH_ORDER = ['user_settings', 'decks', 'flashcards', 'flashcard_reviews', 'notes', 'plan_tasks', 'goals', 'favorites', 'exam_attempts', 'answers', 'study_sessions'];
+export const PUSH_ORDER = ['user_settings', 'decks', 'flashcards', 'flashcard_reviews', 'notes', 'plan_tasks', 'goals', 'favorites', 'exam_attempts', 'answers', 'study_sessions', 'lesson_progress'];
 
 // Conteúdo (somente leitura para alunos), guardado no aparelho para uso offline
 export const CONTENT_TABLES = ['areas', 'subjects', 'topics', 'exam_boards', 'questions'];
