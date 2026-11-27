@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DIRS = ['css', 'js', 'vendor', 'icons'];
-const FILES = ['index.html', 'manifest.webmanifest', 'conteudo/banco.json'];
+// conteudo/banco.json (vários MB) não entra no cache inicial: com conta, as questões vêm do servidor.
+const FILES = ['index.html', 'manifest.webmanifest'];
 
 export function listAssets() {
   const out = [...FILES];

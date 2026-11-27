@@ -6,13 +6,13 @@ import * as auth from './core/auth.js';
 import * as store from './core/store.js';
 import * as sync from './core/sync.js';
 import * as aparencia from './core/aparencia.js';
-import { ensureSeed } from './core/conteudo.js';
+import { ensureSeed, catalog } from './core/conteudo.js';
 import { migrateV02 } from './lib/migrar-v02.js';
 import { on, emit } from './core/bus.js';
 import * as controles from './core/controles.js';
 import * as protecao from './core/protecao.js';
 
-export const VERSION = '1.2.0-dev';
+export const VERSION = '1.3.0-dev';
 
 const NAV = [
   { id: 'inicio', name: 'Início', mobile: true },
@@ -268,6 +268,9 @@ async function boot() {
   registerSW();
   emit('app:ready');
   document.documentElement.dataset.ready = '1';
+  // Prepara o banco de questões em segundo plano: quando o aluno abrir Questões, já está pronto
+  const aquecer = () => setTimeout(() => (window.requestIdleCallback || setTimeout)(() => catalog().catch(() => {})), 1500);
+  aquecer(); on('content:change', aquecer);
 }
 
 boot();

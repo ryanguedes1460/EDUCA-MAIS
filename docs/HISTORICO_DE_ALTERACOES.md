@@ -1,5 +1,17 @@
 # Histórico de alterações
 
+## 1.3.0 (em desenvolvimento, mesma branch da 1.2)
+**Novo**
+- Banco de questões ampliado para **13.088 questões autorais** (antes 2.767), sem nenhum enunciado repetido. Por matéria: Matemática 5.372, Física 2.994, Química 2.128, Geografia 837, Biologia 477, Raciocínio lógico 326, Português 298, Inglês 248, História 218, Literatura 116, Filosofia 76, Sociologia 54 e Direito 10.
+- 63 tipos novos de questão de exatas, incluindo nível ITA, IME e FUVEST (determinantes, complexos, polinômios, relações de Girard, gases, lentes, colisões, estequiometria, titulação e outros), e 26 tabelas novas de humanas, linguagens e natureza.
+- 32 estilos de prova para filtrar: ENEM, FUVEST, UNICAMP, ITA, IME, UFMG, PAS/UnB, UEMA, UNITINS, UERJ, Unesp e uma universidade de cada estado, com cidades da região nos enunciados. As questões são autorais e avisam que não são oficiais.
+
+**Melhorado**
+- Primeiro acesso: o banco vem num arquivo só, em vez de milhares de linhas pela API.
+- O app prepara o banco em segundo plano e as telas de questões abrem mais rápido.
+- Busca de duplicadas do painel com índice e sem comparar as questões geradas entre si.
+- Alternativas sem erros de formatação (ex.: "0,00 N" ou "18,0" como distrator foram eliminados).
+
 ## 1.2.0 (em desenvolvimento, branch `claude/project-thread-miog5u`)
 Ainda não publicada: não está na `main`, no site nem no Supabase real. Vai para um projeto Supabase novo, para não mexer na 0.3 que está no ar.
 

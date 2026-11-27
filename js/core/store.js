@@ -52,6 +52,7 @@ const reqP = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result);
 
 export async function getRaw(store, key) { return reqP(tx([store]).objectStore(store).get(key)); }
 export async function allRaw(store) { return reqP(tx([store]).objectStore(store).getAll()); }
+export async function countRaw(store) { return reqP(tx([store]).objectStore(store).count()); }
 export async function putRaw(store, rows) {
   const t = tx([store], 'readwrite'); const os = t.objectStore(store);
   for (const r of [].concat(rows)) os.put(r);

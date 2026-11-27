@@ -57,6 +57,12 @@ Detalhes e regras: [SISTEMA_PROFESSORES.md](SISTEMA_PROFESSORES.md).
 4. Conflito: vence a edição mais recente; se o aparelho tem uma alteração mais nova ainda não enviada, ela é preservada.
 5. O que o servidor recusar (ex.: limite atingido) fica em "não enviados" na tela **Conta**, com opção de tentar de novo ou descartar.
 
+## Banco de questões grande (1.3)
+- Gerado por `node scripts/gerar-banco.mjs` (determinístico: rodar de novo gera as mesmas questões, com os mesmos ids). Saídas: `conteudo/banco.json`, a migração do catálogo e as partes SQL.
+- Todas as questões geradas têm id `e1000000-0000-4000-a000-…` e `updated_at` fixo em 26/11/2026. No primeiro acesso, o app baixa o arquivo `conteudo/banco.json` (um download só) e pede ao servidor apenas as questões editadas depois dessa data.
+- Cada questão tem um **estilo de prova** (tabela `exam_boards`, tipo `estilo`, ids 20 a 51): ENEM, FUVEST, UNICAMP, ITA, IME, UFMG, PAS/UnB, UEMA, UNITINS e uma universidade de cada estado. São questões autorais no jeito daquela prova, não questões oficiais; o campo `source` diz isso.
+- A busca de duplicadas do painel compara as questões escritas à mão com todas as outras, mas não as geradas entre si (elas seguem modelos e seriam "parecidas" aos milhares).
+
 ## Cópias de segurança
 Na versão 1.2 a rotina de backup do repositório (`backup.yml`) e o "baixar/restaurar meus dados" da tela Conta foram retirados, a pedido da administração. Os dados de cada aluno ficam na conta, no Supabase.
 - Se um aluno pedir uma cópia dos próprios dados, a administração pode consultar as tabelas dele no painel do Supabase.
@@ -66,7 +72,7 @@ Na versão 1.2 a rotina de backup do repositório (`backup.yml`) e o "baixar/res
 ## Instalar num projeto Supabase novo (1.2)
 No SQL Editor do projeto novo, rode nesta ordem:
 1. `supabase/instalar.sql` (todas as tabelas, regras e funções).
-2. `supabase/banco-de-questoes/parte-01.sql` até `parte-05.sql` (as 2.767 questões; cada parte pode ser rodada de novo sem duplicar).
+2. `supabase/banco-de-questoes/parte-01.sql` até `parte-14.sql` (as 13.088 questões, cerca de 1 MB cada; cada parte pode ser rodada de novo sem duplicar).
 3. `select public.bootstrap_admin('SEU-EMAIL', 'Ryan');` depois de criar a sua conta pelo site.
 
 Contas novas entram **aguardando liberação** (configuração `liberacao_manual`). Para desligar: `update public.app_settings set value = 'false'::jsonb where key = 'liberacao_manual';`

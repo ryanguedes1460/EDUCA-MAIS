@@ -46,7 +46,7 @@ export function opcoes(r, correta, distratores, total = 5) {
 
 /** Distratores numéricos plausíveis a partir do valor certo. */
 export function vizinhos(r, v, fmt = x => num(x), extras = []) {
-  const out = extras.map(fmt);
+  const out = extras.map(x => fmt(x));
   const fatores = [0.5, 2, 0.9, 1.1, 0.8, 1.2, 1.5, 0.75, 1.25, 10, 0.1];
   for (const f of r.shuffle(fatores)) {
     const x = Number.isInteger(v) ? Math.round(v * f) : Math.round(v * f * 100) / 100;

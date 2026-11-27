@@ -8,6 +8,7 @@ import * as store from './store.js';
 import { USER_TABLES, PUSH_ORDER, toRemote, fromRemote, mergeRemote } from './tabelas.js';
 import { emit, on } from './bus.js';
 import { debounce } from './util.js';
+import * as banco from './banco.js';
 
 export const status = { state: configured ? 'idle' : 'local', pending: 0, rejected: 0, lastSync: null, error: '' };
 let running = null, again = false, retryMs = 5000, retryTimer = null;
@@ -105,12 +106,24 @@ export async function pullContent() {
   }
   // Paginação por (updated_at, id): muitas questões podem ter o mesmo updated_at
   // (ex.: o banco de questões é inserido de uma vez), então não dá para usar só "maior que".
+  // Primeira vez no aparelho: o banco grande vem do arquivo do site (um download só, comprimido),
+  // em vez de milhares de linhas pela API. Depois só vem do servidor o que foi editado.
+  if ((await store.meta.get('banco_versao', 0)) < banco.VERSAO) {
+    try {
+      const b = await banco.baixar();
+      for (let i = 0; i < b.questions.length; i += 1000) await store.putRaw('questions', b.questions.slice(i, i + 1000));
+      await store.meta.set('banco_versao', banco.VERSAO);
+    } catch (e) { console.warn('banco de questões pelo arquivo', e); }
+  }
+  const temArquivo = (await store.meta.get('banco_versao', 0)) >= banco.VERSAO;
   const cursor = await store.meta.get('cur:questions', '1970-01-01T00:00:00Z');
   let maxSeen = cursor;
   for (let from = 0; ; from += 500) {
-    const { data, error } = await sb.from('questions')
+    let q = sb.from('questions')
       .select('id, code, subject_id, topic_id, level, difficulty, board_id, year, qtype, theme, statement, image_path, image_alt, explanation, hint, source, status, visibility, updated_at, question_options(id, question_id, position, body, is_correct)')
-      .eq('status', 'published').gte('updated_at', cursor).order('updated_at').order('id').range(from, from + 499);
+      .eq('status', 'published').gte('updated_at', cursor);
+    if (temArquivo) q = q.or(`id.lt.${banco.ID_MIN},id.gt.${banco.ID_MAX},updated_at.gt.${banco.DATA}`);
+    const { data, error } = await q.order('updated_at').order('id').range(from, from + 499);
     if (error) throw error;
     if (!data.length) break;
     await store.putRaw('questions', data.map(q => ({ ...q, options: (q.question_options || []).sort((a, b) => a.position - b.position), question_options: undefined })));

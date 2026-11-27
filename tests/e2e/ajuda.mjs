@@ -32,7 +32,10 @@ export async function open(page, hash = '') {
 
 export async function go(page, hash) {
   await page.evaluate(h => { location.hash = h; }, hash);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
+  // Com o banco grande, a primeira tela depois de abrir o app pode levar um pouco mais para montar
+  await page.waitForFunction(() => (document.querySelector('#view')?.innerText || '').trim().length > 0, null, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(100);
 }
 
 /** Espera a sincronização terminar (chip "Sincronizado" sem pendências). */

@@ -6,13 +6,12 @@
 //  * Supabase (dados, login, arquivos privados): NUNCA passa pelo cache. Dados pessoais
 //    ficam no IndexedDB de cada conta, e credenciais só no armazenamento do Supabase.
 //  * Atualização controlada: a versão nova espera o usuário tocar em "Atualizar agora".
-const VERSION = '5d8390601606';
+const VERSION = 'e1d8c8ed7a1f';
 const CACHE = 'educa-mais-' + VERSION;
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './conteudo/banco.json',
   './css/base.css',
   './css/componentes.css',
   './css/layout.css',

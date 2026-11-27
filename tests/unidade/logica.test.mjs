@@ -159,11 +159,11 @@ import { notaTRI } from '../../js/lib/tri.js';
 import { montarCronograma } from '../../js/lib/cronograma.js';
 import { readFileSync as rfs } from 'node:fs';
 
-describe('banco de questões 1.2', () => {
+describe('banco de questões (1.3: mais de 10 mil)', () => {
   const raw = JSON.parse(rfs(new URL('../../conteudo/banco.json', import.meta.url), 'utf8'));
   const b = expandir(raw);
   test('tem milhares de questões, todas com 5 alternativas e uma correta', () => {
-    assert.ok(b.questions.length >= 2500, `só ${b.questions.length}`);
+    assert.ok(b.questions.length >= 10000, `só ${b.questions.length}`);
     for (const q of b.questions) {
       assert.equal(q.options.length, 5, q.code);
       assert.equal(q.options.filter(o => o.is_correct).length, 1, q.code);
@@ -175,6 +175,22 @@ describe('banco de questões 1.2', () => {
     assert.equal(new Set(b.questions.map(q => q.code)).size, b.questions.length);
     const sql = rfs(new URL('../../supabase/banco-de-questoes/parte-01.sql', import.meta.url), 'utf8');
     assert.ok(sql.includes(`'${bid(1)}', '${b.questions[0].code}'`));
+  });
+  test('nenhum enunciado repetido e nenhuma alternativa estranha (NaN, "0 N", "R$ 0,00")', () => {
+    assert.equal(new Set(b.questions.map(q => q.statement)).size, b.questions.length);
+    for (const q of b.questions) {
+      const txt = q.statement + q.explanation + q.options.map(o => o.body).join('|');
+      assert.doesNotMatch(txt, /NaN|undefined|Infinity|\[object/, q.code);
+      const certa = q.options.find(o => o.is_correct).body;
+      if (!/^(R\$ )?0(,0+)? \S/.test(certa)) for (const o of q.options) assert.doesNotMatch(o.body, /^(R\$ )?0(,0+)? \S/, q.code);
+    }
+  });
+  test('separado por estilo de prova, com as provas pedidas e o aviso de que não é oficial', () => {
+    const nomes = new Map(raw.boards.map(x => [x.id, x.name]));
+    const usados = new Set(b.questions.map(q => nomes.get(q.board_id)).filter(Boolean));
+    for (const n of ['ENEM', 'FUVEST', 'UNICAMP', 'ITA', 'IME', 'UFMG', 'PAS/UnB', 'UEMA', 'UNITINS']) assert.ok(usados.has('Estilo ' + n), 'falta o estilo ' + n);
+    for (const q of b.questions) if (q.board_id !== 1) assert.match(q.source, /Não é uma questão oficial/);
+    assert.ok(b.questions.filter(q => nomes.get(q.board_id) === 'Estilo ITA').every(q => q.difficulty >= 4), 'ITA só com questões difíceis');
   });
   test('cobre todas as áreas do ENEM', () => {
     const mats = new Set(b.questions.map(q => q.subject_id));
