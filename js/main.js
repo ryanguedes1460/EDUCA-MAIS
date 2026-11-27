@@ -25,7 +25,7 @@ const L = p => () => import(`./views/${p}.js`);
 export const VIEWS = {
   inicio: { load: T('inicio'), title: 'Início' },
   estudar: { load: T('estudar'), title: 'Estudar' },
-  aulas: { load: T('aulas'), title: 'Aulas', feature: 'aulas', needs: 'login' },
+  aulas: { legacy: L('aulas'), title: 'Aulas', feature: 'aulas', needs: 'login' },
   praticar: { load: T('praticar'), title: 'Praticar' },
   questoes: { load: T('questoes'), title: 'Questões', feature: 'questoes' },
   desafio: { load: T('questoes'), title: 'Desafio do dia', feature: 'questoes', props: { modo: 'desafio' } },
@@ -142,12 +142,15 @@ function App() {
   let { view, params } = route;
   if (configured && !auth.isLogged() && view !== 'entrar') view = 'entrar';
   if (auth.state.recovery && view !== 'entrar') { view = 'entrar'; params = ['nova-senha']; }
+  if (view === 'professor' && configured && auth.isLogged() && !auth.can('teacher.area')) { view = 'conta'; params = []; history.replaceState(null, '', '#conta'); toast('A área do professor é liberada depois que a administração aprova o seu pedido (em Minha conta).'); }
+  if (view === 'admin' && configured && auth.isLogged() && !auth.can('admin.access')) { view = 'inicio'; params = []; history.replaceState(null, '', '#inicio'); toast('Área restrita à administração.'); }
   const def = VIEWS[view];
   let gate = null;
   if (auth.isBlocked() && view !== 'conta') gate = html`<${Blocked} reason="conta" />`;
   else if (def.needs === 'login' && !auth.isLogged() && configured) gate = null;
   else if (def.needs && def.needs !== 'login' && !auth.can(def.needs)) gate = html`<${Blocked} />`;
   else if (def.feature && controles.isBlocked(def.feature)) gate = controles.isPending() ? html`<${Pending} />` : html`<${Blocked} />`;
+  document.documentElement.dataset.view = view;
   useEffect(() => { document.title = `${def.title} · Educa Mais`; if (!['entrar', 'conta', 'perfil', 'admin'].includes(view)) saveLastView(view); }, [view]);
 
   const app = {
@@ -159,7 +162,13 @@ function App() {
   const content = gate || (def.legacy ? html`<${Legacy} key=${key} load=${def.legacy} params=${params} />` : html`<${Screen} key=${key} def=${def} params=${params} view=${key} />`);
 
   if (def.bare) {
-    return html`<${AppCtx.Provider} value=${app}><div class="app">${content}${modal}</div></${AppCtx.Provider}>`;
+    return html`<${AppCtx.Provider} value=${app}><div class="auth-wrap">
+      <section class="auth-art"><a class="brand" href="#inicio"><span class="brand-mark">E+</span><span class="brand-name">EDUCA <b>MAIS</b></span></a>
+        <div class="col" style="gap:14px"><div class="chip accent" style="align-self:flex-start">✦ ENEM, vestibulares, fundamental e médio</div><h1>Estude com <span class="hl">tudo num só lugar</span>.</h1>
+          <p class="muted hide-sm" style="font-size:17px;max-width:540px">Mais de 13 mil questões, simulados com nota estilo TRI, flashcards inteligentes, aulas, sala de foco, redação e o seu progresso salvo em qualquer aparelho. Funciona até sem internet.</p>
+          <div class="stat-row hide-sm"><div><b>13 mil+</b><span class="small muted">questões</span></div><div><b>32</b><span class="small muted">estilos de prova</span></div><div><b>10</b><span class="small muted">mundos visuais</span></div></div></div>
+        <span class="tiny faint hide-sm">Educa Mais · plataforma de estudos</span></section>
+      <section class="auth-side">${content}</section></div>${modal}</${AppCtx.Provider}>`;
   }
   const [sIc, sLabel, sTitle, sCls] = SYNC[sst.state] || SYNC.idle;
   const nome = auth.state.profile?.display_name || auth.state.user?.email || '';
@@ -170,13 +179,15 @@ function App() {
     <div class="app">
       <header class="topbar">
         <a class="brand" href="#inicio" aria-label="Educa Mais, início"><span class="brand-mark">E+</span><span class="brand-name">EDUCA <b>MAIS</b></span></a>
-        <nav class="nav" aria-label="Seções">${NAV.map(([k, ic, l]) => html`<button class=${active(k) ? 'active' : ''} onClick=${() => go(k)} aria-current=${active(k) ? 'page' : null}>${l}</button>`)}
-          <button class=${view === 'foco' ? 'active' : ''} onClick=${() => go('foco')}>Foco</button></nav>
+        <nav class="nav" id="nav" aria-label="Seções">${NAV.map(([k, ic, l]) => html`<a href=${'#' + k} data-v=${k} class=${active(k) ? 'active' : ''} aria-current=${active(k) ? 'page' : null}>${l}</a>`)}
+          <a href="#foco" data-v="foco" class=${view === 'foco' ? 'active' : ''}>Foco</a>
+          ${auth.can('teacher.area') && html`<a href="#professor" data-v="professor" class=${view === 'professor' ? 'active' : ''}>Professor</a>`}
+          ${auth.can('admin.access') && html`<a href="#admin" data-v="admin" class=${view === 'admin' ? 'active' : ''}>Painel</a>`}</nav>
         <span class="spacer"></span>
         <button class="searchbtn" onClick=${() => setBusca(true)} aria-label="Buscar (Ctrl+K)">🔎 <span class="txt">Buscar em tudo</span><span class="kbd">Ctrl K</span></button>
-        ${(configured || sst.state !== 'local') && html`<button class=${'chip hide-sm ' + sCls} title=${sTitle} disabled=${!auth.isLogged()} onClick=${() => sync.syncNow({ content: true }).then(() => toast('Sincronizado'))}>${sCls === 'ok' ? html`<span class="dot"></span>` : sIc} ${sLabel}${sst.pending ? ` · ${sst.pending}` : ''}</button>`}
+        ${(configured || sst.state !== 'local') && html`<button class=${'chip hide-sm ' + sCls} title=${sTitle} disabled=${!auth.isLogged()} onClick=${() => sync.syncNow({ content: true }).then(() => toast('Sincronizado'))}>${sCls === 'ok' ? html`<span class="dot"></span>` : sIc} <span id="syncLabel">${sLabel}${sst.pending ? ` · ${sst.pending} pendente${sst.pending > 1 ? 's' : ''}` : ''}</span></button>`}
         <button class="btn ghost icon" onClick=${cycle} title=${'Trocar mundo (agora: ' + w.label + ')'} aria-label="Trocar mundo visual">${w.icon}</button>
-        <button class="btn ghost" style="padding:3px" onClick=${() => go('perfil')} aria-label="Perfil"><span class="avatar">${(nome[0] || '★').toUpperCase()}</span></button>
+        <button class="btn ghost" id="who" style="padding:3px" onClick=${() => go('perfil')} aria-label="Perfil"><span class="avatar">${(nome[0] || '★').toUpperCase()}</span><span class="sr-only">${nome}</span></button>
       </header>
       ${configError && html`<div class="banner-top bad" role="alert">${configError}</div>`}
       ${aviso && html`<div class="banner-top" role="status">📣 ${aviso}</div>`}

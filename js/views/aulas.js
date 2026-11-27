@@ -10,7 +10,7 @@ import { proteger } from '../core/protecao.js';
 const CACHE = 'aulas:lista';
 const COLS = 'id, title, description, subject_id, module, position, video_provider, video_ref, body, material_id, duration_min, pre_codes, post_codes, access, status, updated_at';
 
-async function carregar() {
+export async function carregar() {
   if (!navigator.onLine) return { lista: await store.meta.get(CACHE, []), offline: true };
   const { data, error } = await sb.from('lessons').select(COLS).eq('status', 'published').order('subject_id').order('module').order('position').order('title');
   if (error) throw error;

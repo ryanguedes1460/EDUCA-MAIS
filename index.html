@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="auto">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,24 +7,23 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com; media-src 'self' blob: https://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Educa Mais</title>
-<meta name="description" content="Educa Mais: plataforma de estudos com banco de questões, flashcards com revisão espaçada, metas, foco e painel de desempenho. Funciona online e offline.">
-<meta name="theme-color" content="#2340b8">
+<meta name="description" content="Educa Mais: plataforma de estudos com mais de 13 mil questões, simulados com nota estilo TRI, flashcards, aulas, sala de foco, redação e progresso. Funciona online e offline.">
+<meta name="theme-color" content="#0e0b09">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&family=Nunito:wght@400;600;800&family=Literata:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/componentes.css">
-<link rel="stylesheet" href="css/temas.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@500;700;800&family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Nunito:wght@400;700&family=Literata:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/educa.css">
 <script src="config.js"></script>
 <script src="vendor/supabase.js" defer></script>
+<script src="vendor/preact-htm.js" defer></script>
 <script type="module" src="js/main.js"></script>
 </head>
 <body>
-<div id="app"><p style="padding:24px;font-family:system-ui">Carregando a Educa Mais…</p></div>
+<div id="app"><div class="boot"><div><div class="brand-mark">E+</div><div class="small">Carregando a Educa Mais…</div></div></div></div>
 <noscript><p style="padding:24px">A Educa Mais precisa de JavaScript ativado.</p></noscript>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>

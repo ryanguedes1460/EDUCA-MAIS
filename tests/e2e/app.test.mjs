@@ -85,9 +85,9 @@ describe('fluxo completo do estudante', () => {
   });
 
   test('personalização e dados aparecem em outro aparelho (memória na conta)', async () => {
-    await go(A, 'aparencia');
-    await A.click('[data-action=theme][data-v=dark]');
-    await A.click('[data-action=color][data-f=color_primary][data-c="#1f8a4c"]');
+    await go(A, 'perfil');
+    await A.click('button.world:has-text("Noite de estudo")');
+    await A.click('button.swatch[aria-label="Cor #22c55e"]');
     await go(A, 'anotacoes');
     await A.click('[data-action=new]');
     await A.fill('#noteTitle', 'Resumo de Biologia');
@@ -99,8 +99,8 @@ describe('fluxo completo do estudante', () => {
     await login(B, email, pass1);
     await waitSynced(B, 20000);
     assert.equal(await B.getAttribute('html', 'data-theme'), 'dark');
-    const brand = await B.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand').trim());
-    assert.equal(brand, '#1f8a4c');
+    const brand = await B.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+    assert.equal(brand, '#22c55e');
     await go(B, 'anotacoes');
     assert.match(await B.innerText('#view'), /Resumo de Biologia/);
     await go(B, 'flashcards');
@@ -121,12 +121,13 @@ describe('fluxo completo do estudante', () => {
 
   test('offline: grava sem internet e sincroniza quando a conexão volta', async () => {
     // abre a tela antes (sem service worker neste contexto, o código da tela precisa já estar carregado)
-    await go(A, 'plano');
-    await A.waitForSelector('#newTask');
+    await go(A, 'cronograma');
+    await A.waitForSelector('#addTask');
     await ctxA.setOffline(true);
     await A.evaluate(() => dispatchEvent(new Event('offline')));
-    await A.fill('#newTask input[name=title]', `Revisar química offline ${email}`);
-    await A.click('#newTask button[type=submit]');
+    await A.click('#addTask');
+    await A.fill('#taskTitle', `Revisar química offline ${email}`);
+    await A.click('#saveTask');
     await A.waitForFunction(() => /Offline.*pendente/.test(document.querySelector('#syncLabel')?.textContent || ''));
     const label = await A.innerText('#syncLabel');
     assert.match(label, /pendente/);
@@ -265,24 +266,15 @@ describe('interface, segurança e offline', () => {
     const { context, page } = await newPage({ context: { viewport: { width: 390, height: 800 } } });
     await entrarAluno(page);
     assert.equal(await page.getAttribute('html', 'data-device'), 'mobile');
-    assert.ok(await page.locator('.nav-more').isVisible());
+    assert.ok(await page.locator('.bottom-nav').isVisible());
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     assert.equal(overflow, false, 'não pode haver rolagem horizontal no celular');
     await page.setViewportSize({ width: 900, height: 800 }); await page.waitForTimeout(300);
     assert.equal(await page.getAttribute('html', 'data-device'), 'tablet');
     await page.setViewportSize({ width: 1300, height: 800 }); await page.waitForTimeout(300);
     assert.equal(await page.getAttribute('html', 'data-device'), 'desktop');
-    await go(page, 'aparencia');
-    await page.click('[data-action=device][data-v=mobile]');
-    await page.waitForSelector('html[data-device="mobile"]', { timeout: 3000 }).catch(() => {});
-    assert.equal(await page.getAttribute('html', 'data-device'), 'mobile');
-    await page.waitForTimeout(500); // a tela muda na hora; a gravação no aparelho termina logo depois
-    await page.reload(); await page.waitForSelector('html[data-ready="1"]');
-    assert.equal(await page.getAttribute('html', 'data-device'), 'mobile', 'preferência salva');
-    await page.goto(BASE + '#aparencia'); await page.waitForSelector('html[data-ready="1"]');
-    await page.click('[data-action=device][data-v=auto]');
-    await page.waitForSelector('html[data-device="desktop"]', { timeout: 3000 }).catch(() => {});
-    assert.equal(await page.getAttribute('html', 'data-device'), 'desktop');
+    // Na versão 2.0 a tela se ajusta sozinha ao tamanho (sem escolha manual de modo)
+    assert.equal(await page.locator('.bottom-nav').isVisible(), false);
     await context.close();
   });
 
@@ -296,7 +288,7 @@ describe('interface, segurança e offline', () => {
     await page.waitForTimeout(800);
     await go(page, 'inicio'); await go(page, 'anotacoes');
     assert.equal(await page.evaluate(() => window.__xss), undefined);
-    assert.match(await page.innerText('.item-btn'), /<img src=x/);
+    assert.match(await page.innerText('.note-item'), /<img src=x/);
     await context.close();
   });
 
@@ -308,7 +300,7 @@ describe('interface, segurança e offline', () => {
     await context.setOffline(true);
     await page.reload(); await page.waitForSelector('html[data-ready="1"]', { timeout: 15000 });
     await go(page, 'questoes');
-    assert.match(await page.innerText('#view'), /questões disponíveis/);
+    assert.match(await page.innerText('#view'), /questões encontradas/);
     await context.close();
   });
 
@@ -317,22 +309,22 @@ describe('interface, segurança e offline', () => {
     const csp = [];
     page.on('console', m => { if (/Content Security Policy/i.test(m.text())) csp.push(m.text()); });
     await entrarAluno(page);
-    for (const v of ['questoes', 'flashcards', 'plano', 'foco', 'anotacoes', 'desempenho', 'resultados', 'resultados/flashcards', 'redacao', 'aulas', 'duvidas', 'materiais', 'aparencia', 'conta']) await go(page, v);
+    for (const v of ['inicio', 'estudar', 'praticar', 'questoes', 'desafio', 'erros', 'flashcards', 'cronograma', 'foco', 'anotacoes', 'progresso', 'progresso/horas', 'progresso/conquistas', 'redacao', 'aulas', 'duvidas', 'materiais', 'perfil', 'conta']) await go(page, v);
     assert.deepEqual(csp, []);
     assert.deepEqual(page.errors, []);
     await context.close();
   });
 });
 
-describe('versão 1.2: telas novas', () => {
+describe('telas de estudo', () => {
   test('cronograma cabe no tablet e no computador, e o automático gera tarefas', async () => {
     const { context, page } = await newPage({ context: { viewport: { width: 1024, height: 800 } } });
     await entrarAluno(page);
-    await go(page, 'plano');
+    await go(page, 'cronograma');
     await page.click('[data-action=gerar]');
-    await page.waitForSelector('dialog[open]');
-    await page.click('dialog[open] button[type=submit]');
-    await page.waitForSelector('dialog', { state: 'detached' });
+    await page.waitForSelector('.modal-bg');
+    await page.click('.modal-foot .btn.primary');
+    await page.waitForSelector('.modal-bg', { state: 'detached' });
     await page.waitForSelector('.task');
     const larguras = await page.$$eval('.task', els => els.slice(0, 5).map(e => e.getBoundingClientRect().width));
     assert.ok(larguras.every(w => w >= 180), 'cada tarefa precisa de espaço para ler: ' + larguras.join(','));
