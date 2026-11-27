@@ -1,0 +1,33 @@
+# Roda todos os testes a cada envio e pedido de revisão.
+name: Testes
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Testes de lógica
+        run: npm test
+      - name: Iniciar banco local (Supabase)
+        run: npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,supavisor,postgres-meta
+      - name: Testes do banco e segurança
+        run: npm run test:banco
+      - name: Instalar navegador
+        run: npx playwright install --with-deps chromium
+      - name: Testes no navegador
+        run: npm run test:e2e
+      - name: Parar banco
+        if: always()
+        run: npx supabase stop --no-backup

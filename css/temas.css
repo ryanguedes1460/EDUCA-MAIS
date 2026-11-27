@@ -1,0 +1,81 @@
+/* Educa Mais · temas extras, fundos decorativos, cantos e fontes.
+   Cada aluno escolhe o seu em Aparência; nada aqui muda a tela de outra pessoa. */
+
+/* ---------- Temas claros ---------- */
+:root[data-theme="azul"] {
+  --bg: #eef4ff; --surface: #ffffff; --surface-2: #dde8fd; --ink: #0f1f3d; --muted: #4c5f82; --line: #c9d8f5;
+  --brand: #1d5fd6; --brand-ink: #ffffff; --second: #0b8fb3; --second-ink: #ffffff; --mark: #ffd23f; --good: #1f8a4c; --bad: #c2362f; --warn: #9a6514;
+}
+:root[data-theme="rosa"] {
+  --bg: #fff1f6; --surface: #ffffff; --surface-2: #fde0ea; --ink: #3a1225; --muted: #84516a; --line: #f5c9d9;
+  --brand: #c2186b; --brand-ink: #ffffff; --second: #7b3fb8; --second-ink: #ffffff; --mark: #ffd6e7; --mark-ink: #3a1225; --good: #1f8a4c; --bad: #b3261e; --warn: #9a6514;
+}
+:root[data-theme="roxo"] {
+  --bg: #f5f1ff; --surface: #ffffff; --surface-2: #e8defd; --ink: #24133f; --muted: #645584; --line: #d9ccf5;
+  --brand: #6b3fd4; --brand-ink: #ffffff; --second: #c2186b; --second-ink: #ffffff; --mark: #ffe066; --good: #1f8a4c; --bad: #c2362f; --warn: #9a6514;
+}
+:root[data-theme="verde"] {
+  --bg: #effaf3; --surface: #ffffff; --surface-2: #d9f2e2; --ink: #0f2d1c; --muted: #4a6b57; --line: #c3e6cf;
+  --brand: #13804a; --brand-ink: #ffffff; --second: #0e7c86; --second-ink: #ffffff; --mark: #f3e163; --good: #13804a; --bad: #b3261e; --warn: #8d6100;
+}
+:root[data-theme="laranja"] {
+  --bg: #fff5ec; --surface: #ffffff; --surface-2: #ffe5cf; --ink: #35190a; --muted: #7d5a44; --line: #f6d2b4;
+  --brand: #d4570f; --brand-ink: #ffffff; --second: #1d5fd6; --second-ink: #ffffff; --mark: #ffd23f; --good: #1f8a4c; --bad: #b3261e; --warn: #8d5200;
+}
+:root[data-theme="vermelho"] {
+  --bg: #fff2f1; --surface: #ffffff; --surface-2: #fde0dd; --ink: #3a0f0c; --muted: #85514c; --line: #f4c9c4;
+  --brand: #c62a22; --brand-ink: #ffffff; --second: #334155; --second-ink: #ffffff; --mark: #ffd23f; --good: #1f8a4c; --bad: #a3150e; --warn: #8d5200;
+}
+:root[data-theme="lilas"] {
+  --bg: #f8f4fc; --surface: #ffffff; --surface-2: #efe5f8; --ink: #2d2238; --muted: #6d5f7b; --line: #e2d4ef;
+  --brand: #9255c9; --brand-ink: #ffffff; --second: #4f8fce; --second-ink: #ffffff; --mark: #ffe3f1; --mark-ink: #2d2238; --good: #2f8a55; --bad: #c2362f; --warn: #94640f;
+}
+:root[data-theme="menta"] {
+  --bg: #effbf8; --surface: #ffffff; --surface-2: #d6f4ec; --ink: #0d2a26; --muted: #476b65; --line: #c0e8de;
+  --brand: #0c8a78; --brand-ink: #ffffff; --second: #6b3fd4; --second-ink: #ffffff; --mark: #fff27a; --good: #13804a; --bad: #c2362f; --warn: #8d6100;
+}
+:root[data-theme="girassol"] {
+  --bg: #fffaea; --surface: #ffffff; --surface-2: #fdf0c4; --ink: #2e2405; --muted: #6f6236; --line: #f1e1a6;
+  --brand: #a86c00; --brand-ink: #ffffff; --second: #2f6b3a; --second-ink: #ffffff; --mark: #ffd23f; --good: #2f7d32; --bad: #b3261e; --warn: #7a4f00;
+}
+
+/* ---------- Temas escuros ---------- */
+:root[data-theme="preto"] {
+  --bg: #000000; --surface: #0d0d0f; --surface-2: #1a1a1f; --ink: #f2f2f5; --muted: #a0a0ad; --line: #26262e;
+  --brand: #5b8cff; --brand-ink: #000000; --second: #4cc6cf; --second-ink: #000000; --mark: #ffd23f; --mark-ink: #000; --good: #4cc483; --bad: #ff7a70; --warn: #f0b952;
+  --shadow: none; color-scheme: dark;
+}
+:root[data-theme="meia-noite"] {
+  --bg: #0b1026; --surface: #121a3a; --surface-2: #1a2450; --ink: #e6ebff; --muted: #9ba7d6; --line: #26326a;
+  --brand: #8fa8ff; --brand-ink: #0b1026; --second: #f59ad1; --second-ink: #0b1026; --mark: #ffd166; --mark-ink: #0b1026; --good: #4cc483; --bad: #ff7a70; --warn: #f0b952;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 6px 20px rgba(0,0,0,.3); color-scheme: dark;
+}
+:root[data-theme="cafe"] {
+  --bg: #1b1410; --surface: #261c16; --surface-2: #33261e; --ink: #f4e9df; --muted: #c2ab98; --line: #47362b;
+  --brand: #e0a46b; --brand-ink: #1b1410; --second: #9ccf8a; --second-ink: #1b1410; --mark: #f2c14e; --mark-ink: #1b1410; --good: #9ccf8a; --bad: #ff8a7a; --warn: #f2c14e;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 6px 20px rgba(0,0,0,.3); color-scheme: dark;
+}
+
+/* ---------- Fundos decorativos ---------- */
+:root[data-bg="pontos"] body { background-image: radial-gradient(color-mix(in srgb, var(--brand) 18%, transparent) 1.2px, transparent 1.3px); background-size: 22px 22px; }
+:root[data-bg="grade"] body { background-image: linear-gradient(color-mix(in srgb, var(--brand) 9%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--brand) 9%, transparent) 1px, transparent 1px); background-size: 28px 28px; }
+:root[data-bg="cadernos"] body { background-image: linear-gradient(color-mix(in srgb, var(--second) 16%, transparent) 1px, transparent 1px); background-size: 100% 30px; }
+:root[data-bg="degrade"] body { background-image: linear-gradient(160deg, color-mix(in srgb, var(--brand) 14%, var(--bg)) 0%, var(--bg) 45%, color-mix(in srgb, var(--second) 14%, var(--bg)) 100%); background-attachment: fixed; }
+:root[data-bg="ondas"] body { background-image: radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 55%), radial-gradient(ellipse at 90% 100%, color-mix(in srgb, var(--second) 16%, transparent), transparent 55%); background-attachment: fixed; }
+:root[data-bg="estrelas"] body { background-image: radial-gradient(color-mix(in srgb, var(--mark) 55%, transparent) 1px, transparent 1.5px), radial-gradient(color-mix(in srgb, var(--brand) 35%, transparent) 1px, transparent 1.5px); background-size: 90px 90px, 140px 140px; background-position: 0 0, 40px 60px; }
+
+/* ---------- Cantos ---------- */
+:root[data-radius="reto"] { --r: 4px; }
+:root[data-radius="redondo"] { --r: 20px; }
+
+/* ---------- Fontes ---------- */
+:root[data-font="arredondada"] { --f-body: "Nunito", "Segoe UI", system-ui, sans-serif; --f-display: "Nunito", "Segoe UI", system-ui, sans-serif; }
+:root[data-font="leitura"] { --f-body: "Literata", Georgia, serif; }
+:root[data-font="dislexia"] { --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif; --f-display: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif; letter-spacing: .02em; word-spacing: .08em; }
+
+/* ---------- Proteção de conteúdo (aulas e materiais) ---------- */
+.protegido { position: relative; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.protegido img, .protegido video { -webkit-user-drag: none; pointer-events: auto; }
+:root[data-escondido="1"] .protegido > * { filter: blur(22px) brightness(.35); transition: filter .1s; }
+:root[data-escondido="1"] .protegido::after { content: 'Conteúdo protegido. Volte para esta janela para continuar.'; position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; font-weight: 700; color: var(--ink); z-index: 6; }
+@media print { body * { visibility: hidden !important; } body::after { content: 'Impressão desativada na Educa Mais.'; visibility: visible; display: block; padding: 40px; font: 700 20px system-ui; } }
