@@ -2,6 +2,7 @@
 import { html, setHTML, $, toast, friendlyError } from '../core/util.js';
 import { configured, config } from '../core/backend.js';
 import * as auth from '../core/auth.js';
+import { registrar } from '../core/atividade.js';
 import * as store from '../core/store.js';
 
 const PERFIS = { enem: 'ENEM e vestibular', medio: 'Ensino médio', fundamental: 'Ensino fundamental', concurso: 'Concursos' };
@@ -77,7 +78,7 @@ export default {
           const email = form.email.value.trim(), password = form.password.value;
           if (!validEmail(email) || !password) return msg(box, 'Informe e-mail e senha.');
           busy(form, true); msg(box, '');
-          try { await auth.signIn({ email, password, captchaToken: token() }); toast('Bem-vindo de volta!'); await ctx.enterAccount(); }
+          try { await auth.signIn({ email, password, captchaToken: token() }); registrar('conta.entrar', null, { aparelho: auth.platform() }); toast('Bem-vindo de volta!'); await ctx.enterAccount(); }
           catch (err) { msg(box, friendlyError(err)); busy(form, false); }
         };
       },
@@ -87,7 +88,8 @@ export default {
           <label class="f">E-mail<input class="input" name="email" type="email" autocomplete="email" required maxlength="254"></label>
           <label class="f">Senha (mínimo 8 caracteres, com letras e números)<input class="input" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="72"></label>
           <label class="f">Repita a senha<input class="input" name="password2" type="password" autocomplete="new-password" required maxlength="72"></label>
-          <label class="f">Eu estudo para<select class="input" name="perfil">${Object.entries(PERFIS).map(([k, v]) => html`<option value="${k}">${v}</option>`)}</select></label>
+          <label class="f">Vou usar a plataforma como<select class="input" name="tipo"><option value="aluno">Aluno</option><option value="professor">Professor</option></select></label>
+          <label class="f">Eu estudo (ou ensino) para<select class="input" name="perfil">${Object.entries(PERFIS).map(([k, v]) => html`<option value="${k}">${v}</option>`)}</select></label>
           <label class="check"><input type="checkbox" name="terms" required> Li e aceito que meus dados de estudo sejam guardados na minha conta para o funcionamento da plataforma. Se tenho menos de 18 anos, tenho autorização do meu responsável.</label>
           <div data-captcha></div><p data-msg hidden role="alert"></p>
           <button class="btn" type="submit">Criar conta</button></form>`);
@@ -102,7 +104,7 @@ export default {
           if (!form.terms.checked) return msg(box, 'É preciso aceitar os termos para criar a conta.');
           busy(form, true); msg(box, '');
           try {
-            const r = await auth.signUp({ email, password, name, studyProfile: form.perfil.value, captchaToken: token() });
+            const r = await auth.signUp({ email, password, name, studyProfile: form.perfil.value, accountType: form.tipo.value, captchaToken: token() });
             if (r.needsConfirmation) {
               setHTML(box, html`<div class="stack" role="status"><h2>Confira seu e-mail</h2><p>Se <b>${email}</b> ainda não tiver conta, enviamos um link de confirmação. Abra o e-mail (veja também o spam), clique no link e depois entre aqui com sua senha.</p><button class="btn ghost" type="button" data-tab2="entrar">Ir para Entrar</button></div>`);
               box.querySelector('[data-tab2]').onclick = () => { tab = 'entrar'; draw(); };

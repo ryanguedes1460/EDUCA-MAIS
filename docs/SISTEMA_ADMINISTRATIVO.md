@@ -15,6 +15,9 @@ Só aparece para contas com permissão (o Ryan, depois do passo 5 de [CONFIGURAC
 | Comentários | Ocultar ou apagar comentários das questões | `content.manage` |
 | Configurações | Aviso geral no topo do app, cadastro aberto/fechado, número de questões por simulado, comentários ligados/desligados | `settings.manage` |
 | Permissões | Papéis (administrador, estudante, professor) e o que cada um pode fazer | `roles.manage` |
+| Alunos | Contas aguardando liberação (com e-mail e se pediu para ser aluno ou professor): liberar escolhendo o papel e o que a conta recebe, ou recusar | `users.manage` |
+| Atividade e aparelhos | Todas as contas com último acesso e número de aparelhos; linha do tempo de ações com filtro; detalhe de cada conta (aparelhos, logins, ações dos últimos 30 dias) | `users.view` |
+| Mensagens e erros | Dúvidas para o professor e relatos de erro ou sugestões para o desenvolvedor, com a tela e o aparelho | `users.view` |
 | Auditoria | Quem fez o quê e quando (bloqueios, mudanças de papel, edição de questões e configurações) | `audit.view` |
 
 ## Papéis

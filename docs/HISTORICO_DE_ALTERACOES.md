@@ -1,5 +1,15 @@
 # Histórico de alterações
 
+## 2.1.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **2.737 questões oficiais do ENEM** (2009 a 2023), com imagens, gabarito oficial do INEP e referência completa: ano, dia, número da questão, matéria e conteúdo. Filtros por origem (oficial ou autoral) e por ano da prova. Matéria e conteúdo foram classificados automaticamente pelo número da questão e por palavras-chave.
+- **1.155 questões de concursos** no estilo das provas do Maranhão e de prefeituras (Conhecimentos do Maranhão, legislação municipal, Lei 14.133, informática, atendimento ao público, matemática com cidades maranhenses). São autorais e avisam isso: nenhuma recebe referência falsa de prova oficial.
+- Novas matérias: Espanhol, Artes, Educação Física, Conhecimentos do Maranhão, Informática e Atendimento ao público. Total no banco: 17.005 questões.
+- **Cadastro com aprovação**: a pessoa escolhe se é aluno ou professor; a conta chega à administração, que escolhe o papel e o que a conta recebe (partes do aluno e ferramentas do professor) ou recusa.
+- **Registro de atividade**: cada ação (telas abertas, questões respondidas, simulados, flashcards, anotações, PDFs, pesquisas, entradas e saídas) vai para o painel > Atividade e aparelhos, com linha do tempo, logins e quantos aparelhos diferentes usam cada conta.
+- **Fale conosco**: mensagens para o professor (dúvidas) ou para o desenvolvedor (relatar erro ou sugestão), com a tela e o aparelho anexados ao relato. Toda tela com erro tem o botão "Relatar ao desenvolvedor".
+- **Ferramentas do professor**: gerar PDF de provas e listas com questões da plataforma ou do próprio banco (cabeçalho da escola, duas colunas, embaralhar, referência, gabarito e resolução), e pesquisar na internet sem sair da plataforma (Wikipédia dentro do app e atalhos para Google Acadêmico, YouTube, Khan Academy e INEP), criando questões a partir do texto encontrado.
+
 ## 1.3.0 (em desenvolvimento, mesma branch da 1.2)
 **Novo**
 - Banco de questões ampliado para **13.088 questões autorais** (antes 2.767), sem nenhum enunciado repetido. Por matéria: Matemática 5.372, Física 2.994, Química 2.128, Geografia 837, Biologia 477, Raciocínio lógico 326, Português 298, Inglês 248, História 218, Literatura 116, Filosofia 76, Sociologia 54 e Direito 10.

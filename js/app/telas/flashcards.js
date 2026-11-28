@@ -3,7 +3,7 @@ import { html, useState, useEffect, useRef, useApp, useData, go, PageHead, Modal
 import * as store from '../../core/store.js';
 import { catalog } from '../../core/conteudo.js';
 import { schedule, isDue, describeInterval, stage, RATINGS } from '../../lib/srs.js';
-import { nowISO, norm } from '../../core/util.js';
+import { nowISO, norm, plainText } from '../../core/util.js';
 
 const novo = () => ({ is_favorite: false, ease: 2.5, interval_days: 0, repetitions: 0, lapses: 0, due_at: nowISO(), last_reviewed_at: null });
 
@@ -41,7 +41,7 @@ function TemaForm({ cat, onClose }) {
     if (!achadas.length) return toast('Não encontrei esse tema no banco. Tente outra palavra (ex.: "Newton", "juros").', 3500);
     const esc = achadas.sort(() => Math.random() - 0.5).slice(0, +n);
     const deck = await store.put('decks', { name: ('Tema: ' + tema.trim()).slice(0, 60), subject_id: esc[0].subject_id, kind: 'user', color: null, is_favorite: false });
-    for (const q of esc) { const r = q.options.find(o => o.is_correct); await store.put('flashcards', { deck_id: deck.id, front: q.statement.slice(0, 1000), back: `${r ? r.body + '\n\n' : ''}${q.explanation}`.slice(0, 3000), subject_id: q.subject_id, source_question_id: null, ...novo() }); }
+    for (const q of esc) { const r = q.options.find(o => o.is_correct); await store.put('flashcards', { deck_id: deck.id, front: plainText(q.statement).slice(0, 1000), back: `${r ? plainText(r.body) + '\n\n' : ''}${q.explanation}`.slice(0, 3000), subject_id: q.subject_id, source_question_id: null, ...novo() }); }
     toast(`${esc.length} cartões criados em "${deck.name}"`, 3000); onClose(deck.id);
   };
   return html`<${Modal} title="Criar cartões de um tema" icon="✨" onClose=${() => onClose()} foot=${html`<button class="btn primary" onClick=${criar}>Criar cartões</button>`}>

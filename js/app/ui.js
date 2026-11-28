@@ -120,14 +120,14 @@ export function Loading({ text = 'Carregando…' }) {
 }
 
 export function ErrorBox({ error }) {
-  return html`<div class="card pad"><${Empty} icon="⚠️" title="Não foi possível abrir esta parte">${String(error?.message || error || '')}. Recarregue a página. Se estiver sem internet, abra o app uma vez com conexão.</${Empty}></div>`;
+  return html`<div class="card pad"><${Empty} icon="⚠️" title="Não foi possível abrir esta parte" action=${html`<button class="btn ghost sm" onClick=${() => go('duvidas', 'erro', document.documentElement.dataset.view || '')}>🐞 Relatar ao desenvolvedor</button>`}>${String(error?.message || error || '')}. Recarregue a página. Se estiver sem internet, abra o app uma vez com conexão.</${Empty}></div>`;
 }
 
 // ---------- matérias: ícone e cor ----------
 const ICONS = [
   [/portugu|gramát|língua/i, '📖'], [/literat/i, '📚'], [/reda/i, '✍️'], [/ingl/i, '🇬🇧'], [/espanh/i, '🇪🇸'], [/arte/i, '🎨'], [/educação física/i, '🏃'],
   [/matem|raciocínio|lógic/i, '📐'], [/físic/i, '⚛️'], [/quím/i, '⚗️'], [/biolog|ciênc/i, '🧬'],
-  [/hist/i, '🏛️'], [/geograf/i, '🌎'], [/filosof/i, '🦉'], [/sociolog/i, '👥'], [/direito|legisla|constitu/i, '⚖️'], [/informát|tecnolog/i, '💻'], [/atualidade/i, '📰'], [/administra|economia|finan/i, '💼']
+  [/maranh/i, '🌴'], [/atendimento/i, '🤝'], [/hist/i, '🏛️'], [/geograf/i, '🌎'], [/filosof/i, '🦉'], [/sociolog/i, '👥'], [/direito|legisla|constitu/i, '⚖️'], [/informát|tecnolog/i, '💻'], [/atualidade/i, '📰'], [/administra|economia|finan/i, '💼']
 ];
 export const subjectIcon = name => (ICONS.find(([r]) => r.test(name || '')) || [, '📘'])[1];
 export const subjectColor = s => (s?.color && /^#[0-9a-f]{6}$/i.test(s.color) ? s.color : '#6d28d9');

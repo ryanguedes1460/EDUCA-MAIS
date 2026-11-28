@@ -111,7 +111,7 @@ export default function Inicio() {
           ['✍️', 'Redação', 'Temas no estilo ENEM e folha com cronômetro', 'redacao'],
           ['🗓️', 'Cronograma automático', 'A plataforma monta a sua semana', 'cronograma'],
           ['📈', 'Progresso e conquistas', 'Horas por mês, acerto por matéria e medalhas', 'progresso'],
-          ['💬', 'Falar com a professora', 'Tire dúvidas de aulas e questões', 'duvidas']
+          ['💬', 'Fale conosco', 'Dúvidas para o professor, erros para o desenvolvedor', 'duvidas']
         ].map(([ic, a, b, v]) => html`<button class="card feature" onClick=${() => go(v)}><div class="ic">${ic}</div><div><div class="bold">${a}</div><div class="small muted">${b}</div></div></button>`)}
       </div>
     </section>

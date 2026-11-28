@@ -49,7 +49,13 @@ Lista dos pedidos enviados à equipe sobre questões do banco geral, com a respo
 | Imagens do professor ficam em `t/<id do professor>/`; só ele grava ali; imagens privadas só são lidas por quem pode ver a questão | políticas do Storage (migração 8) |
 | Toda alteração de questão gera versão com autor | `record_question_revision` (uma versão por transação) |
 
+## Ferramentas do professor (2.1)
+Em `#ferramentas`:
+- **Gerar PDF**: escolhe o banco (plataforma ou o próprio), filtra por matéria, conteúdo, dificuldade, origem e ano, sorteia ou escolhe questão por questão, ordena e imprime (salvar como PDF). Opções de cabeçalho: título, escola, professor, turma, data, instruções, linha de nome, referência da questão, gabarito, resolução, duas colunas e embaralhar.
+- **Pesquisar na internet**: busca na Wikipédia dentro do app, copia o trecho com a fonte e cria uma questão no próprio banco a partir dele; também mostra questões parecidas do banco da plataforma.
+
+A administração liga ou desliga cada ferramenta por professor: `prof_banco`, `prof_listas`, `prof_turmas`, `prof_pdf`, `prof_pesquisa`, `prof_banco_geral`.
+
 ## O que ainda não existe
-- Envio de **materiais em PDF** pelo professor (hoje só a equipe envia materiais).
 - Notificações (e-mail ou aviso) quando uma lista nova chega.
 - Correção de questões discursivas: só múltipla escolha e certo/errado.

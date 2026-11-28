@@ -62,10 +62,11 @@ export async function loadProfile() {
   return data;
 }
 
-export async function signUp({ email, password, name, studyProfile, captchaToken }) {
+export async function signUp({ email, password, name, studyProfile, accountType = 'aluno', captchaToken }) {
   const { data, error } = await sb.auth.signUp({
     email, password,
-    options: { emailRedirectTo: appUrl(), data: { display_name: name, study_profile: studyProfile }, captchaToken }
+    // account_type só registra o pedido: quem decide se a conta é de professor é a administração
+    options: { emailRedirectTo: appUrl(), data: { display_name: name, study_profile: studyProfile, account_type: accountType === 'professor' ? 'professor' : 'aluno' }, captchaToken }
   });
   if (error) throw error;
   return { needsConfirmation: !data.session };
@@ -83,7 +84,10 @@ export async function signIn({ email, password, captchaToken }) {
   return data.user;
 }
 
+/** Funções chamadas antes de sair da conta (ex.: enviar o registro de atividade). */
+export const antesDeSair = [];
 export async function signOut(scope = 'local') {
+  for (const fn of antesDeSair) await Promise.resolve(fn()).catch(() => {});
   await endLoginSession().catch(() => {});
   const { error } = await sb.auth.signOut({ scope });
   state.user = null; state.profile = null;
@@ -117,6 +121,19 @@ export async function verifyPassword(password) {
 const lsKey = () => `em:ls:${state.user?.id}`;
 export const currentLoginSessionId = () => { try { return localStorage.getItem(lsKey()); } catch { return null; } };
 
+/** Identificador aleatório deste navegador (não identifica a pessoa, só o aparelho). */
+export function deviceId() {
+  try {
+    let id = localStorage.getItem('em:device');
+    if (!/^[A-Za-z0-9-]{8,64}$/.test(id || '')) { id = 'd-' + uuid(); localStorage.setItem('em:device', id); }
+    return id;
+  } catch { return null; }
+}
+export function platform() {
+  const ua = navigator.userAgent;
+  return /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iPhone/iPad' : /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'Mac' : /CrOS/i.test(ua) ? 'Chromebook' : /Linux/i.test(ua) ? 'Linux' : 'Outro';
+}
+
 function deviceName() {
   const ua = navigator.userAgent;
   const os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iPhone/iPad' : /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'Mac' : /Linux/i.test(ua) ? 'Linux' : 'Aparelho';
@@ -127,7 +144,10 @@ function deviceName() {
 export async function startLoginSession() {
   if (!state.user) return;
   const id = uuid();
-  const { error } = await sb.from('login_sessions').insert({ id, device: deviceName(), user_agent: navigator.userAgent.slice(0, 300) });
+  const row = { id, device: deviceName(), user_agent: navigator.userAgent.slice(0, 300), device_id: deviceId(), platform: platform() };
+  let { error } = await sb.from('login_sessions').insert(row);
+  // servidor ainda sem as colunas novas (versão anterior do banco): grava sem elas
+  if (error && /device_id|platform|column/i.test(error.message || '')) ({ error } = await sb.from('login_sessions').insert({ id, device: row.device, user_agent: row.user_agent }));
   if (!error) try { localStorage.setItem(lsKey(), id); } catch {}
 }
 

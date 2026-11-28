@@ -113,3 +113,18 @@ export function friendlyError(e) {
   if (m && m.length < 160 && /[áéíóúãõç]/i.test(m)) return m; // mensagens do nosso banco já estão em português
   return 'Não foi possível concluir. Tente de novo.';
 }
+
+// ---------------- Texto das questões ----------------
+// As questões oficiais do ENEM trazem um Markdown simples: **negrito**, _itálico_,
+// <sub>/<sup> e imagens ![](conteudo/enem/...). Só isso é convertido; o resto é texto.
+const IMG_OK = /^conteudo\/enem\/\d{4}\/[a-z0-9-]+\.webp$/;
+export function richText(s) {
+  let t = esc(s);
+  t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => IMG_OK.test(src) ? `<img class="q-img" loading="lazy" src="${src}" alt="${alt || 'Imagem da questão'}">` : '');
+  t = t.replace(/\*\*([^*\n]+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])_([^_\n]+?)_(?=[\s.,;:!?)]|$)/g, '$1<i>$2</i>');
+  t = t.replace(/\n*(<img [^>]+>)\n*/g, '$1');
+  t = t.replace(/&lt;(sub|sup)&gt;([^&<]{1,20})&lt;\/\1&gt;/g, '<$1>$2</$1>').replace(/\\\[…\\\]/g, '[…]').replace(/\\([[\]*_])/g, '$1');
+  return t;
+}
+/** Texto sem marcações (para resumos, busca e flashcards). */
+export const plainText = s => String(s ?? '').replace(/!\[[^\]]*\]\([^)]*\)/g, '[imagem]').replace(/\*\*|<\/?su[bp]>/g, '').replace(/(^|\s)_([^_\n]+?)_/g, '$1$2').replace(/\\([[\]*_])/g, '$1');

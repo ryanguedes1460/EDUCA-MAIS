@@ -6,7 +6,7 @@
 //  * Supabase (dados, login, arquivos privados): NUNCA passa pelo cache. Dados pessoais
 //    ficam no IndexedDB de cada conta, e credenciais só no armazenamento do Supabase.
 //  * Atualização controlada: a versão nova espera o usuário tocar em "Atualizar agora".
-const VERSION = '4abca63b9e8d';
+const VERSION = '58e5bcf321b5';
 const CACHE = 'educa-mais-' + VERSION;
 const ASSETS = [
   './',
@@ -20,6 +20,7 @@ const ASSETS = [
   './js/app/telas/cronograma.js',
   './js/app/telas/erros.js',
   './js/app/telas/estudar.js',
+  './js/app/telas/ferramentas.js',
   './js/app/telas/flashcards.js',
   './js/app/telas/foco.js',
   './js/app/telas/inicio.js',
@@ -30,6 +31,7 @@ const ASSETS = [
   './js/app/telas/redacao.js',
   './js/app/ui.js',
   './js/core/aparencia.js',
+  './js/core/atividade.js',
   './js/core/auth.js',
   './js/core/backend.js',
   './js/core/banco.js',

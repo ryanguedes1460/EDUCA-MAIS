@@ -22,7 +22,7 @@ export default {
       if (!navigator.onLine) { setHTML(el, html`<div class="card"><h1>Área do professor</h1><p class="muted">A área do professor precisa de internet: cada alteração é conferida e guardada no servidor na hora.</p></div>`); return; }
       setHTML(el, html`<div class="stack" style="gap:var(--gap)"><div class="head"><div><span class="eyebrow">Professor</span><h1>Área do professor</h1>
         <p>Suas questões ficam no seu banco, privadas. Os alunos só as veem dentro das listas que você enviar para as suas turmas.</p></div></div>
-        <div class="tabs" role="tablist">${TABS.map(([k, n]) => html`<a href="#professor/${k}" role="tab" aria-selected="${tab === k}">${n}</a>`)}</div><div id="prof"></div></div>`);
+        <div class="tabs" role="tablist">${TABS.map(([k, n]) => html`<a href="#professor/${k}" role="tab" aria-selected="${tab === k}">${n}</a>`)}<a href="#ferramentas/pdf" role="tab">📄 Gerar PDF</a><a href="#ferramentas/pesquisa" role="tab">🔎 Pesquisar na internet</a></div><div id="prof"></div></div>`);
       const box = $('#prof', el);
       try { if (!cat) cat = await loadCatalog(); await views[tab](box); }
       catch (e) { console.error(e); setHTML(box, html`<p class="err">${friendlyError(e)}</p>`); }

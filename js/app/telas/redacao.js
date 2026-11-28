@@ -44,7 +44,7 @@ function Folha({ tema, onClose }) {
         <div class="card pad col"><b>Antes de entregar, confira</b>${COMP.map(([c, dd], i) => html`<label class="check" style="align-items:flex-start"><input type="checkbox" checked=${check.includes(i)} onChange=${() => { const c2 = check.includes(i) ? check.filter(x => x !== i) : [...check, i]; setCheck(c2); save(txt, c2); }} /><span><b>${i + 1}. ${c}</b><br /><span class="tiny muted">${dd}</span></span></label>`)}
           <${Bar} value=${check.length} max=${5} /></div>
         <div class="card pad col"><b>Conectivos usados: ${conectivos}</b><div class="row wrap" style="gap:5px">${CONECTIVOS.map(c => html`<span class=${'chip ' + (txt.toLowerCase().includes(c.toLowerCase()) ? 'ok' : '')}>${c}</span>`)}</div></div>
-        ${auth.isLogged() && html`<button class="btn" onClick=${() => go('duvidas')}>💬 Pedir ajuda à professora</button>`}
+        ${auth.isLogged() && html`<button class="btn" onClick=${() => go('duvidas')}>💬 Pedir ajuda ao professor</button>`}
       </aside></div></div>`;
 }
 

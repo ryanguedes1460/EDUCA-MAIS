@@ -3,7 +3,7 @@ import { html, useData, go, PageHead, Empty, Bar, subjectIcon } from '../ui.js';
 import * as store from '../../core/store.js';
 import { catalog } from '../../core/conteudo.js';
 import { wrongNow } from '../jogo.js';
-import { fmtDate } from '../../core/util.js';
+import { fmtDate, plainText } from '../../core/util.js';
 
 export default function Erros() {
   const [d] = useData(async () => {
@@ -23,7 +23,7 @@ export default function Erros() {
     ${!d.wrong.length ? html`<div class="card"><${Empty} icon="🎉" title="Nenhum erro pendente" action=${html`<button class="btn primary" onClick=${() => go('questoes')}>Praticar questões</button>`}>Quando você errar uma questão, ela aparece aqui para você refazer.</${Empty}></div>`
       : [...by.values()].sort((a, b) => b.list.length - a.list.length).map(({ s, list }) => html`<section class="card pad col">
         <div class="row between"><h3>${subjectIcon(s?.name)} ${s?.name || 'Outras'} <span class="chip danger">${list.length}</span></h3><button class="btn sm" onClick=${() => go('questoes', 'revisar', s?.id)}>Refazer ${s?.name || ''}</button></div>
-        ${list.slice(0, 6).map(({ a, q }) => html`<button class="card qitem" style="padding:10px 14px" onClick=${() => go('questoes', 'codigos', q.code)}><span class="grow"><span class="small">${q.statement.slice(0, 150)}${q.statement.length > 150 ? '…' : ''}</span><div class="tiny faint">${q.code} · errou em ${fmtDate(a.answered_at)}</div></span></button>`)}
+        ${list.slice(0, 6).map(({ a, q }) => html`<button class="card qitem" style="padding:10px 14px" onClick=${() => go('questoes', 'codigos', q.code)}><span class="grow"><span class="small">${(t => t.slice(0, 150) + (t.length > 150 ? '…' : ''))(plainText(q.statement))}</span><div class="tiny faint">${q.code} · errou em ${fmtDate(a.answered_at)}</div></span></button>`)}
         ${list.length > 6 && html`<p class="tiny muted">e mais ${list.length - 6}.</p>`}</section>`)}
   </div>`;
 }

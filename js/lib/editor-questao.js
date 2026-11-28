@@ -30,9 +30,9 @@ export async function showRevisions(id) {
  * Abre o editor. Devolve true se salvou ou excluiu.
  * staff = equipe da plataforma (pode escolher a visibilidade e editar qualquer questão).
  */
-export async function editQuestion({ id = null, cat, staff = false }) {
+export async function editQuestion({ id = null, cat, staff = false, base = {} }) {
   const qq = id ? await q(sb.from('questions').select('*, question_options(*)').eq('id', id).single())
-    : { level: 'enem', difficulty: 2, qtype: 'multiple_choice', status: 'draft', visibility: staff ? 'public' : 'private', question_options: [] };
+    : { level: 'enem', difficulty: 2, qtype: 'multiple_choice', status: 'draft', visibility: staff ? 'public' : 'private', question_options: [], ...base };
   const opts = (qq.question_options || []).sort((a, b) => a.position - b.position);
   while (opts.length < (qq.qtype === 'true_false' ? 2 : 4)) opts.push({ id: '', body: '', is_correct: false });
   const topicsFor = sid => cat.topics.filter(t => t.subject_id === +sid);

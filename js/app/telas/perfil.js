@@ -18,7 +18,8 @@ export default function Perfil() {
   const cur = worldOf(s.theme);
   const links = [
     ['👤', 'Minha conta', 'Nome, senha, aparelhos conectados e seus dados', 'conta', auth.isLogged() || !app.configured],
-    ['💬', 'Falar com a professora', 'Tire dúvidas de aulas e questões', 'duvidas', auth.isLogged()],
+    ['💬', 'Fale conosco', 'Dúvidas para o professor, erros para o desenvolvedor', 'duvidas', auth.isLogged()],
+    ['🐞', 'Relatar um erro', 'Algo não funcionou? Avise o desenvolvedor', 'duvidas/erro/perfil', auth.isLogged()],
     ['🏫', 'Minhas turmas', 'Listas e simulados do professor', 'turmas', auth.isLogged()],
     ['📄', 'Materiais', 'PDFs liberados para você', 'materiais', auth.isLogged()],
     ['🧑‍🏫', 'Área do professor', 'Banco próprio, turmas e listas', 'professor', auth.can('teacher.area')],
@@ -29,7 +30,7 @@ export default function Perfil() {
       <div class="grow"><h1 style="font-size:32px">${nome}</h1>${lv && html`<div class="small muted">Nível ${lv.L} · ${lv.title} · 🔥 ${streakOf(d)} dias seguidos</div><div class="mt" style="max-width:360px;margin-top:8px"><${Bar} value=${lv.into} max=${lv.need} /></div>`}</div>
       ${app.profile?.role === 'admin' && html`<span class="chip accent">Administração</span>`}</div></section>
 
-    <div class="grid feature-grid">${links.map(([ic, a, b, v]) => html`<button class="card feature" onClick=${() => go(v)}><div class="ic">${ic}</div><div><div class="bold">${a}</div><div class="small muted">${b}</div></div></button>`)}</div>
+    <div class="grid feature-grid">${links.map(([ic, a, b, v]) => html`<button class="card feature" onClick=${() => go(...v.split('/'))}><div class="ic">${ic}</div><div><div class="bold">${a}</div><div class="small muted">${b}</div></div></button>`)}</div>
 
     <section class="card pad col"><h2>Mundo visual</h2><p class="small muted">Cada mundo muda as cores, o fundo e as letras dos títulos. Fica salvo na sua conta.</p>
       <div class="world-grid">${WORLDS.map(w => html`<button class=${'world' + (cur === w.id && s.theme !== 'auto' ? ' on' : '')} onClick=${() => { setWorld(w.id).then(() => force(x => x + 1)); }}><div class="prev" style=${{ background: `radial-gradient(circle at 80% 0%, ${w.prev[1]}55, transparent 60%), ${w.prev[0]}` }}>${w.icon}<i style=${{ background: w.prev[1] }}></i></div><div class="nm">${w.label}</div></button>`)}

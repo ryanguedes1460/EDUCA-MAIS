@@ -7,3 +7,4 @@ supabase/.branches/
 test-results/
 dist/
 backups/
+scripts/.cache/

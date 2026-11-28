@@ -6,13 +6,38 @@ import * as auth from '../../core/auth.js';
 import { sb } from '../../core/backend.js';
 import { catalog, LEVELS, DIFFICULTY, QTYPES, bancoCarregando } from '../../core/conteudo.js';
 import { notaTRI } from '../../lib/tri.js';
-import { norm, nowISO, uuid, dayKey, friendlyError, pct } from '../../core/util.js';
+import { norm, nowISO, uuid, dayKey, friendlyError, pct, richText, plainText } from '../../core/util.js';
 import * as aparencia from '../../core/aparencia.js';
 import { dailyQuestions, wrongNow, XP } from '../jogo.js';
 import { SimuladoModal } from './praticar.js';
+import { registrar } from '../../core/atividade.js';
 
 const PAGE = 20;
-const EMPTY = { area: '', subject: '', topic: '', level: '', difficulty: '', board: '', year: '', qtype: '', situacao: '', q: '' };
+const EMPTY = { origem: '', area: '', subject: '', topic: '', level: '', difficulty: '', board: '', year: '', qtype: '', situacao: '', q: '' };
+/** Questão de prova oficial (ENEM aplicado pelo INEP), com referência real. */
+export const oficial = q => /Prova oficial/.test(q.source || '');
+/** Referência curta: "ENEM 2019 · 2º dia · Questão 129" ou "Autoral · estilo UEMA". */
+export function referencia(q, cat) {
+  if (oficial(q)) return q.source.split(' · ').slice(0, 3).join(' · ');
+  const b = cat.board(q.board_id)?.name || '';
+  return 'Autoral Educa Mais' + (/^Estilo /.test(b) ? ' · estilo ' + b.slice(7) : '');
+}
+/** Quadro "Referência da questão": prova, ano, número, matéria e conteúdo. */
+export function RefBox({ q, cat }) {
+  const s = cat.subject(q.subject_id), t = cat.topic(q.topic_id), pai = t?.parent_id ? cat.topic(t.parent_id) : null;
+  const of = oficial(q);
+  const linhas = [
+    ['Origem', of ? 'Prova oficial' : 'Questão autoral (não é de prova oficial)'],
+    ['Prova', of ? q.source.split(' · ').slice(0, 3).join(' · ') : (cat.board(q.board_id)?.name || 'Educa Mais').replace(/^Estilo /, 'No estilo: ')],
+    ['Ano', String(q.year || '')],
+    ['Matéria', s?.name || ''],
+    ['Conteúdo', [pai?.name, t?.name].filter(Boolean).join(' › ')],
+    ['Código', q.code || '']
+  ].filter(([, v]) => v);
+  return html`<details class="ref-box mt"><summary>📌 Referência da questão <span class="muted">· ${referencia(q, cat)}</span></summary>
+    <dl>${linhas.map(([k, v]) => html`<dt>${k}</dt><dd>${v}</dd>`)}</dl>
+    <p class="tiny faint">${q.source}${of ? ' Matéria e conteúdo foram classificados automaticamente.' : ''}</p></details>`;
+}
 let lastFilters = { ...EMPTY };
 const LETRAS = 'ABCDEF';
 
@@ -31,7 +56,7 @@ async function wrongToFlashcard(q) {
   if (cards.some(c => c.source_question_id === q.id)) return false;
   const d = await errorsDeck();
   const right = q.options.find(o => o.is_correct);
-  await store.put('flashcards', { deck_id: d.id, front: q.statement.slice(0, 1000), back: `${right ? right.body + '\n\n' : ''}${q.explanation}`.slice(0, 3000), subject_id: q.subject_id, is_favorite: false, source_question_id: q.id, ease: 2.5, interval_days: 0, repetitions: 0, lapses: 0, due_at: nowISO(), last_reviewed_at: null });
+  await store.put('flashcards', { deck_id: d.id, front: plainText(q.statement).slice(0, 1000), back: `${right ? plainText(right.body) + '\n\n' : ''}${q.explanation}`.slice(0, 3000), subject_id: q.subject_id, is_favorite: false, source_question_id: q.id, ease: 2.5, interval_days: 0, repetitions: 0, lapses: 0, due_at: nowISO(), last_reviewed_at: null });
   return true;
 }
 const imgCache = new Map();
@@ -59,6 +84,8 @@ function Banco({ cat, start, initial }) {
     const topicSet = f.topic ? descendants(cat.topics, +f.topic) : null;
     const terms = norm(f.q).split(/\s+/).filter(Boolean);
     return cat.bank.filter(q => {
+      if (f.origem === 'oficial' && !oficial(q)) return false;
+      if (f.origem === 'autoral' && oficial(q)) return false;
       if (f.area && cat.subject(q.subject_id)?.area_id !== +f.area) return false;
       if (f.subject && q.subject_id !== +f.subject) return false;
       if (topicSet && !topicSet.has(q.topic_id)) return false;
@@ -77,15 +104,19 @@ function Banco({ cat, start, initial }) {
   }, [f, mine, cat]);
   const pages = Math.max(1, Math.ceil(res.length / PAGE));
   const usedBoards = new Set(cat.bank.map(q => q.board_id));
+  const nOficiais = useMemo(() => cat.bank.filter(oficial).length, [cat]);
+  const anos = useMemo(() => [...new Set(cat.bank.filter(oficial).map(q => q.year))].sort((a, b) => b - a), [cat]);
   const tops = cat.topics.filter(t => f.subject && t.subject_id === +f.subject);
   const orderedTopics = tops.filter(t => !t.parent_id).flatMap(p => [p, ...tops.filter(c => c.parent_id === p.id)]);
   const fav = async id => { const cur = await store.get('favorites', id); if (cur && !cur.deleted_at) await store.remove('favorites', id); else await store.put('favorites', { ...(cur || {}), id, deleted_at: null }); setTick(t => t + 1); };
   const nFiltros = Object.entries(f).filter(([k, v]) => v && k !== 'q').length;
   return html`<div class="col fade-in" style="gap:18px">
-    <${PageHead} eyebrow="Banco de questões" title="Questões" actions=${html`<button class="btn" onClick=${() => app.setModal(html`<${SimuladoModal} cat=${cat} onClose=${() => app.setModal(null)} />`)}>📝 Montar simulado</button>`}>${cat.bank.length.toLocaleString('pt-BR')} questões autorais em ${usedBoards.size} estilos de prova. Errou? A questão vira flashcard e entra no caderno de erros.</${PageHead}>
+    <${PageHead} eyebrow="Banco de questões" title="Questões" actions=${html`<button class="btn" onClick=${() => app.setModal(html`<${SimuladoModal} cat=${cat} onClose=${() => app.setModal(null)} />`)}>📝 Montar simulado</button>`}>${cat.bank.length.toLocaleString('pt-BR')} questões: ${nOficiais.toLocaleString('pt-BR')} de provas oficiais do ENEM, com ano e número, e ${(cat.bank.length - nOficiais).toLocaleString('pt-BR')} autorais em ${usedBoards.size} estilos de prova e concursos. Errou? A questão vira flashcard e entra no caderno de erros.</${PageHead}>
     <div class="bank-layout">
       <aside class="card pad bank-filters" aria-label="Filtros">
         <${Field} label="Buscar"><input class="input" type="search" value=${f.q} placeholder="Ex.: crase, juros, Newton" onInput=${e => set('q', e.target.value)} /></${Field}>
+        <${Field} label="Origem"><${Select} value=${f.origem} onChange=${v => set('origem', v)} all="Todas" options=${[['oficial', 'Provas oficiais (ENEM)'], ['autoral', 'Autorais Educa Mais']]} /></${Field}>
+        ${anos.length > 0 && html`<${Field} label="Ano da prova"><${Select} value=${f.year} onChange=${v => set('year', v)} options=${anos.map(a => [a, String(a)])} /></${Field}>`}
         <${Field} label="Estilo de prova"><${Select} value=${f.board} onChange=${v => set('board', v)} options=${cat.boards.filter(b => usedBoards.has(b.id)).map(b => [b.id, b.name])} /></${Field}>
         <${Field} label="Área"><${Select} value=${f.area} onChange=${v => set('area', v)} options=${cat.areas.map(a => [a.id, a.name])} /></${Field}>
         <${Field} label="Matéria"><${Select} value=${f.subject} onChange=${v => set('subject', v)} options=${cat.subjects.filter(s => !f.area || s.area_id === +f.area).map(s => [s.id, s.name])} /></${Field}>
@@ -103,8 +134,8 @@ function Banco({ cat, start, initial }) {
         ${res.length ? res.slice(page * PAGE, page * PAGE + PAGE).map(({ q, last, fav: isFav }, i) => html`<div class="card qitem" key=${q.id}>
             <button class="grow" data-action="open" style="all:unset;cursor:pointer;flex:1;min-width:0" onClick=${() => { const list = res.map(r => r.q); const k = page * PAGE + i; start({ mode: 'pratica', qs: [...list.slice(k), ...list.slice(0, k)] }); }}>
               <div class="q-meta"><span class="chip accent">${subjectIcon(cat.subject(q.subject_id)?.name)} ${cat.subject(q.subject_id)?.name || ''}</span>${q.topic_id && html`<span class="chip">${cat.topic(q.topic_id)?.name}</span>`}<span class="chip">${DIFFICULTY[q.difficulty]}</span>${last === true ? html`<span class="chip ok">acertou</span>` : last === false ? html`<span class="chip danger">errou</span>` : null}</div>
-              <p style="margin-top:8px;font-weight:500">${q.statement.length > 200 ? q.statement.slice(0, 200) + '…' : q.statement}</p>
-              <p class="tiny faint" style="margin-top:6px">${q.code}${q.board_id ? ' · ' + (cat.board(q.board_id)?.name || '') : ''}</p></button>
+              <p style="margin-top:8px;font-weight:500">${(t => t.length > 200 ? t.slice(0, 200) + '…' : t)(plainText(q.statement))}</p>
+              <p class="tiny faint" style="margin-top:6px">${oficial(q) ? html`<b>${referencia(q, cat)}</b>` : referencia(q, cat)} · ${q.code}</p></button>
             <button class=${'star' + (isFav ? ' on' : '')} aria-pressed=${isFav} aria-label=${isFav ? 'Remover dos favoritos' : 'Favoritar'} onClick=${() => fav(q.id)}>${isFav ? '★' : '☆'}</button></div>`)
           : html`<div class="card"><${Empty} icon="🔎" title="Nenhuma questão com esses filtros">Tente limpar alguns filtros.</${Empty}></div>`}
         ${pages > 1 && html`<div class="row" style="justify-content:center"><button class="btn sm" disabled=${!page} onClick=${() => { setPage(page - 1); window.scrollTo(0, 0); }}>← Anterior</button><span class="muted small num">Página ${page + 1} de ${pages}</span><button class="btn sm" disabled=${page >= pages - 1} onClick=${() => { setPage(page + 1); window.scrollTo(0, 0); }}>Próxima →</button></div>`}
@@ -152,6 +183,7 @@ function Resolver({ run, setRun, cat, onFinish, onQuit }) {
     const res = [...run.res]; res[run.i] = ok; const chosen = [...run.chosen]; chosen[run.i] = sel;
     setRun({ ...run, res, chosen });
     await store.append('answers', { question_id: q.id, option_id: sel, is_correct: ok, time_spent_ms: spent(), used_hint: hint, mode: run.mode === 'revisao' ? 'revisao' : 'pratica', exam_attempt_id: run.attempt?.id || null, answered_at: nowISO() });
+    registrar('questao.responder', q.code, { certa: ok, modo: run.mode });
     if (!ok && await wrongToFlashcard(q)) toast('Erro guardado como flashcard e no caderno de erros');
     else if (ok) toast(['Boa! +10 XP', 'Acertou! +10 XP', 'Mandou bem! +10 XP'][Math.floor(Math.random() * 3)], 1200);
   };
@@ -184,18 +216,19 @@ function Resolver({ run, setRun, cat, onFinish, onQuit }) {
     <article class="card pad-lg">
       <div class="row between top"><div class="q-meta"><span class="chip accent">${subjectIcon(s?.name)} ${s?.name || ''}</span>${tp && html`<span class="chip">${tp.name}</span>`}<span class="chip">${DIFFICULTY[q.difficulty]}</span>${b && html`<span class="chip">${b.name}</span>`}</div>
         <button class=${'star' + (fav ? ' on' : '')} aria-pressed=${fav} aria-label="Favoritar" onClick=${toggleFav}>${fav ? '★' : '☆'}</button></div>
-      <p class="q-text" id="qText">${q.statement}</p>
+      ${oficial(q) && html`<p class="q-ref">📌 ${referencia(q, cat)}</p>`}
+      <div class="q-text" id="qText" dangerouslySetInnerHTML=${{ __html: richText(q.statement) }}></div>
       ${q.image_path && (img ? html`<img class="q-img" src=${img} alt=${q.image_alt || 'Imagem da questão'} />` : html`<p class="small muted">${q.image_alt ? 'Imagem: ' + q.image_alt : 'Imagem da questão (aparece com internet).'}</p>`)}
       <div class="q-opts" role="radiogroup">${q.options.map((o, i) => {
         const show = answered && !exam;
         const cls = ['opt', sel === o.id && !show ? 'sel' : '', show && o.is_correct ? 'ok' : '', show && o.id === run.chosen[run.i] && !o.is_correct ? 'no' : '', cut.has(o.id) && !show ? 'cut' : ''].join(' ');
-        return html`<div class="row" style="gap:6px;align-items:stretch"><button class=${cls + ' grow'} role="radio" aria-checked=${sel === o.id} disabled=${show} onClick=${() => pick(o.id)}><span class="L">${q.qtype === 'true_false' ? (i ? 'E' : 'C') : LETRAS[i]}</span><span>${o.body}</span></button>
+        return html`<div class="row" style="gap:6px;align-items:stretch"><button class=${cls + ' grow'} role="radio" aria-checked=${sel === o.id} disabled=${show} onClick=${() => pick(o.id)}><span class="L">${q.qtype === 'true_false' ? (i ? 'E' : 'C') : LETRAS[i]}</span><span class="opt-body" dangerouslySetInnerHTML=${{ __html: richText(o.body) }}></span></button>
           ${!show && q.options.length > 2 && html`<button class="btn ghost icon" style="height:auto" title="Riscar esta alternativa" aria-label="Riscar alternativa" onClick=${() => { const c = new Set(cut); c.has(o.id) ? c.delete(o.id) : c.add(o.id); setCut(c); }}>✂</button>`}</div>`;
       })}</div>
       ${hint && html`<div class="explain mt">💡 <b>Dica:</b> ${q.hint}</div>`}
       ${answered && !exam && html`<div class="explain mt" id="qExp" aria-live="polite"><b style=${{ color: run.res[run.i] ? 'var(--ok)' : 'var(--danger)' }}>${run.res[run.i] ? '✓ Correto!' : '✗ Resposta incorreta.'}</b>${!run.res[run.i] && right ? html` A certa é a <b>${LETRAS[q.options.indexOf(right)]}</b>.` : ''} ${q.explanation}
-        ${auth.isLogged() && html`<div class="mt small"><a href=${'#duvidas/nova/questao/' + q.id}>Ainda com dúvida? Pergunte à professora →</a></div>`}</div>`}
-      ${q.source && html`<p class="tiny faint mt">${q.source}</p>`}
+        ${auth.isLogged() && html`<div class="mt small"><a href=${'#duvidas/nova/questao/' + q.id}>Ainda com dúvida? Pergunte ao professor →</a></div>`}</div>`}
+      <${RefBox} q=${q} cat=${cat} />
     </article>
     <div class="row wrap between">
       <div class="row">${exam && html`<button class="btn" disabled=${!run.i} onClick=${prev}>← Anterior</button>`}${!exam && !answered && q.hint && !hint && html`<button class="btn ghost" onClick=${() => setHint(true)}>💡 Pedir dica</button>`}</div>
@@ -234,7 +267,7 @@ function Resultado({ run, cat, onBack }) {
       ${weak.length > 0 && html`<button class="btn ghost" onClick=${() => go('erros')}>Refazer os erros</button>`}
       <button class="btn ghost" onClick=${() => go('progresso')}>Ver progresso</button></div>
     ${ver && run.qs.map((q, i) => { const ch = q.options.find(o => o.id === run.chosen[i]); const r = q.options.find(o => o.is_correct); return html`<div class="card pad col" style="gap:6px"><div class="row between"><b>Questão ${i + 1}</b><span class=${'chip ' + (run.res[i] ? 'ok' : 'danger')}>${run.res[i] ? 'acertou' : ch ? 'errou' : 'sem resposta'}</span></div>
-      <p class="small">${q.statement.slice(0, 260)}${q.statement.length > 260 ? '…' : ''}</p>${ch && !run.res[i] && html`<p class="small" style="color:var(--danger)">Sua resposta: ${ch.body}</p>`}<p class="small" style="color:var(--ok)">Certa: ${r?.body}</p><p class="small muted">${q.explanation}</p></div>`; })}
+      <p class="small">${(t => t.slice(0, 260) + (t.length > 260 ? '…' : ''))(plainText(q.statement))}</p>${ch && !run.res[i] && html`<p class="small" style="color:var(--danger)">Sua resposta: ${plainText(ch.body)}</p>`}<p class="small" style="color:var(--ok)">Certa: ${plainText(r?.body)}</p><p class="tiny faint">${referencia(q, cat)}</p><p class="small muted">${q.explanation}</p></div>`; })}
   </div>`;
 }
 
@@ -282,6 +315,7 @@ export default function Questoes({ params = [], modo }) {
     const tri = (r.mode === 'simulado' || r.mode === 'desafio') && r.qs.length >= 5 ? notaTRI(r.qs.map((q, i) => ({ difficulty: q.difficulty, ok: res[i] === true }))) : null;
     if (r.attempt) { await store.patch('exam_attempts', r.attempt.id, { finished_at: nowISO(), correct: ok, total: r.qs.length }); if (tri) await store.meta.set('tri:' + r.attempt.id, tri.nota); }
     await saveSession(r);
+    registrar(r.mode === 'simulado' ? 'simulado.entregar' : r.mode === 'desafio' ? 'desafio.concluir' : 'pratica.concluir', r.title || null, { acertos: ok, total: r.qs.length, nota: tri?.nota ?? null });
     if (r.mode === 'desafio') toast(`Desafio concluído! +${XP.desafio} XP`, 3000);
     setFim({ ...r, res, endAt: Date.now(), tri });
     setRun(null);

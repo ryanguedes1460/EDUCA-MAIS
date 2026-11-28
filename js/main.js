@@ -13,6 +13,7 @@ import { migrateV02 } from './lib/migrar-v02.js';
 import { on, emit } from './core/bus.js';
 import * as controles from './core/controles.js';
 import * as protecao from './core/protecao.js';
+import * as atividade from './core/atividade.js';
 import { startWorlds, applyWorld, WORLDS, worldOf, setWorld } from './app/mundos.js';
 import { Busca } from './app/busca.js';
 
@@ -41,9 +42,10 @@ export const VIEWS = {
   entrar: { legacy: L('entrar'), title: 'Entrar', bare: true },
   conta: { legacy: L('conta'), title: 'Minha conta' },
   materiais: { legacy: L('materiais'), title: 'Materiais', feature: 'materiais', needs: 'login' },
-  duvidas: { legacy: L('duvidas'), title: 'Falar com a professora', feature: 'duvidas', needs: 'login' },
+  duvidas: { legacy: L('duvidas'), title: 'Fale conosco', needs: 'login' },
   turmas: { legacy: L('turmas'), title: 'Minhas turmas', feature: 'turmas', needs: 'login' },
   professor: { legacy: L('professor'), title: 'Área do professor', needs: 'teacher.area' },
+  ferramentas: { load: T('ferramentas'), title: 'Ferramentas do professor' },
   admin: { legacy: L('admin'), title: 'Painel da professora', needs: 'admin.access' }
 };
 // Endereços da versão anterior continuam funcionando
@@ -91,7 +93,7 @@ function Pending() {
   return html`<div class="card hero fade-in" style="max-width:760px;margin:20px auto">
     <div class="chip accent" style="margin-bottom:14px">⏳ Aguardando liberação</div>
     <h1>Sua conta está quase pronta</h1>
-    <p>Recebemos o seu cadastro. Agora a professora vai liberar as aulas, as questões e as ferramentas da sua conta. Assim que ela liberar, tudo aparece aqui sozinho.</p>
+    <p>Recebemos o seu cadastro${controles.requestedRole() === 'teacher' ? ' como professor' : ''}. Agora a administração confere os dados e escolhe o que a sua conta pode usar. Assim que ela liberar, tudo aparece aqui sozinho.</p>
     <div class="row wrap mt"><button class="btn primary" disabled=${busy} onClick=${async () => { setBusy(true); await controles.load().catch(() => {}); setBusy(false); toast(controles.isPending() ? 'Ainda aguardando a liberação.' : 'Conta liberada!'); }}>🔄 Verificar de novo</button>
       <button class="btn ghost" onClick=${() => go('conta')}>Minha conta</button></div></div>`;
 }
@@ -152,6 +154,7 @@ function App() {
   else if (def.feature && controles.isBlocked(def.feature)) gate = controles.isPending() ? html`<${Pending} />` : html`<${Blocked} />`;
   document.documentElement.dataset.view = view;
   useEffect(() => { document.title = `${def.title} · Educa Mais`; if (!['entrar', 'conta', 'perfil', 'admin'].includes(view)) saveLastView(view); }, [view]);
+  useEffect(() => { emit('view:change', { view, params: gate ? ['bloqueada'] : params }); }, [view, params.join('/')]);
 
   const app = {
     route: { view, params }, setModal, openBusca: () => setBusca(true),
@@ -280,6 +283,7 @@ async function boot() {
   aparencia.startWatchers();
   startWorlds();
   protecao.start();
+  atividade.iniciar();
   on('auth:change', async ({ event }) => {
     if (event === 'SIGNED_IN' && auth.state.user && store.currentScope() !== auth.state.user.id) await enterAccount();
     if (event === 'SIGNED_OUT') await leaveAccount();

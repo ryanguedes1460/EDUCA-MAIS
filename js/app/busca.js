@@ -1,6 +1,6 @@
 // Busca rápida (Ctrl+K ou /): telas, matérias, questões, aulas e anotações.
 import { html, useState, useEffect, useRef, useMemo, go, subjectIcon } from './ui.js';
-import { norm } from '../core/util.js';
+import { norm, plainText } from '../core/util.js';
 import { catalog } from '../core/conteudo.js';
 import * as store from '../core/store.js';
 import * as auth from '../core/auth.js';
@@ -11,7 +11,7 @@ const TELAS = [
   ['erros', '🩹', 'Caderno de erros', 'refazer o que errou'], ['flashcards', '🃏', 'Flashcards', 'revisão espaçada'], ['foco', '⏱️', 'Sala de foco', 'pomodoro, sons, meta'],
   ['progresso', '📈', 'Progresso', 'horas, acertos, conquistas'], ['cronograma', '🗓️', 'Cronograma e metas', 'plano semanal automático'], ['anotacoes', '📝', 'Anotações', 'caderno digital'],
   ['redacao', '✍️', 'Redação', 'temas e folha cronometrada'], ['perfil', '🎨', 'Perfil e mundos', 'tema, cor, letra'], ['conta', '👤', 'Minha conta', 'senha, aparelhos, dados'],
-  ['duvidas', '💬', 'Falar com a professora', 'tirar dúvidas'], ['materiais', '📄', 'Materiais', 'PDFs protegidos'], ['turmas', '🏫', 'Minhas turmas', 'listas do professor']
+  ['duvidas', '💬', 'Fale conosco', 'dúvidas para o professor, erros para o desenvolvedor'], ['materiais', '📄', 'Materiais', 'PDFs protegidos'], ['turmas', '🏫', 'Minhas turmas', 'listas do professor']
 ];
 
 export function Busca({ onClose }) {
@@ -41,7 +41,7 @@ export function Busca({ onClose }) {
       if (t.length >= 3) {
         const up = q.trim().toUpperCase();
         const qs = []; for (const x of cat.bank) { if (x.code === up || (t.length >= 4 && norm(x.statement).includes(t))) { qs.push(x); if (qs.length >= 5) break; } }
-        if (qs.length) groups.push(['Questões', qs.map(x => ({ ic: '❓', n: x.statement.slice(0, 90) + (x.statement.length > 90 ? '…' : ''), d: x.code + ' · ' + (cat.subject(x.subject_id)?.name || ''), run: () => go('questoes', 'codigos', x.code) }))]);
+        if (qs.length) groups.push(['Questões', qs.map(x => ({ ic: '❓', n: (t => t.slice(0, 90) + (t.length > 90 ? '…' : ''))(plainText(x.statement)), d: x.code + ' · ' + (cat.subject(x.subject_id)?.name || ''), run: () => go('questoes', 'codigos', x.code) }))]);
       }
       const aulas = (dados.aulas || []).filter(l => norm(l.title + ' ' + (l.module || '')).includes(t)).slice(0, 4).map(l => ({ ic: '🎬', n: l.title, d: 'aula', run: () => go('aulas', l.id) }));
       if (aulas.length) groups.push(['Aulas', aulas]);
