@@ -1,0 +1,104 @@
+# Histórico de alterações
+
+## 2.3.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **Ensino médio completo**: 2.420 questões autorais novas dos conteúdos que faltavam, como gravitação (272 questões: lei de Newton, gravidade em altitude, Kepler, satélites, peso em outros astros), MHS, ondas sonoras, hidrostática, termodinâmica, óptica, eletrostática, magnetismo, termoquímica, cinética, equilíbrio, eletroquímica, radioatividade, nomenclatura orgânica, genética (2ª lei de Mendel, herança ligada ao X), trigonometria, geometria espacial, combinatória, e tabelas de conceitos de Biologia, Química, História, Geografia, Filosofia, Sociologia e Português.
+- **Questões com figura**: 470 questões com gráficos (posição e velocidade, barras, setores, função afim), triângulos, circuitos e pontos no plano. As figuras são desenhadas pelo próprio gerador a partir dos números da questão (`conteudo/figuras/*.svg`), com fundo branco para ler no tema escuro.
+- **Trilhas, resumos e mapas mentais** (`#trilhas`): mapa de conteúdos do ensino médio com 568 módulos (a partir dos nomes dos módulos das apostilas), cada um com a prioridade para a prova (cai muito, com frequência, às vezes), 101 resumos autorais e um mapa mental desenhado a partir de cada resumo. Cada resumo leva às questões do conteúdo e pode ser marcado como revisado.
+- **Provas e bancas** (`#provas`): ENEM, vestibulares e concursos separados, cada prova com as suas questões.
+- **Selos de origem** em cada questão: "Questão oficial" ou "Autoral · referência de estilo: [prova]". Nas oficiais do ENEM, a referência traz a fonte INEP/MEC, o aviso de que a Educa Mais não tem vínculo com o INEP/MEC e o link para as provas e gabaritos oficiais.
+- **Meu objetivo**: universidades públicas de todos os estados e 24 vestibulares próprios do Brasil (FUVEST, Unicamp, Unesp, ITA, IME, UERJ, UnB, UFPR, UFRGS, UFSC, UECE, UEA e outros), além dos do Maranhão. Novos concursos: Prefeitura de Imperatriz e região tocantina, saúde, educação e assistência social.
+- **Concursos de Imperatriz e região e por profissão**: 287 questões autorais (Imperatriz e região tocantina, SUS e Leis 8.080 e 8.142, LDB, BNCC, PNE e ECA, segurança pública no art. 144, LOAS e SUAS, poderes e atos administrativos, matemática com cidades da região). Novas matérias: Saúde pública (SUS) e Legislação educacional.
+- Página inicial com "Escolha sua jornada" (ENEM, vestibulares, concursos e revisão rápida).
+- Total no banco: 21.512 questões.
+
+## 2.2.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **Meu objetivo** (primeiro acesso): a pessoa escolhe o objetivo (ENEM e faculdade, vestibular, concurso ou escola), a prova, a faculdade e o curso (opcionais), as dificuldades, quantas horas estuda por semana, se já fez a prova e quais notas tirou, e a meta. O app monta um plano: quanto falta para a nota de corte, quanto subir por semana, onde ganhar mais pontos, horas por matéria, passo a passo e o cronograma automático. "Responder depois" adia por 3 dias. As notas de corte sugeridas são referências aproximadas e o aviso aparece na tela.
+- O painel mostra o objetivo de cada conta (Atividade e aparelhos > conta).
+- **ENEM 2024 e 2025**: 171 questões oficiais. Como ainda não estão na enem-api, vêm de duas extrações independentes dos cadernos do INEP e só entram quando as duas concordam no gabarito. As que dependem de imagem ficaram de fora por enquanto.
+- **Vestibulares do Maranhão**: 1.158 questões autorais no estilo PAES/UEMA, vestibular da UEMASUL e seletivo do IFMA (a UFMA usa o ENEM, que está no banco).
+- **Concursos dos estados vizinhos**: 471 questões autorais no estilo de concursos do Piauí, do Pará e do Tocantins, com conhecimentos regionais.
+- Total no banco: 18.805 questões.
+
+## 2.1.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **2.737 questões oficiais do ENEM** (2009 a 2023), com imagens, gabarito oficial do INEP e referência completa: ano, dia, número da questão, matéria e conteúdo. Filtros por origem (oficial ou autoral) e por ano da prova. Matéria e conteúdo foram classificados automaticamente pelo número da questão e por palavras-chave.
+- **1.155 questões de concursos** no estilo das provas do Maranhão e de prefeituras (Conhecimentos do Maranhão, legislação municipal, Lei 14.133, informática, atendimento ao público, matemática com cidades maranhenses). São autorais e avisam isso: nenhuma recebe referência falsa de prova oficial.
+- Novas matérias: Espanhol, Artes, Educação Física, Conhecimentos do Maranhão, Informática e Atendimento ao público. Total no banco: 17.005 questões.
+- **Cadastro com aprovação**: a pessoa escolhe se é aluno ou professor; a conta chega à administração, que escolhe o papel e o que a conta recebe (partes do aluno e ferramentas do professor) ou recusa.
+- **Registro de atividade**: cada ação (telas abertas, questões respondidas, simulados, flashcards, anotações, PDFs, pesquisas, entradas e saídas) vai para o painel > Atividade e aparelhos, com linha do tempo, logins e quantos aparelhos diferentes usam cada conta.
+- **Fale conosco**: mensagens para o professor (dúvidas) ou para o desenvolvedor (relatar erro ou sugestão), com a tela e o aparelho anexados ao relato. Toda tela com erro tem o botão "Relatar ao desenvolvedor".
+- **Ferramentas do professor**: gerar PDF de provas e listas com questões da plataforma ou do próprio banco (cabeçalho da escola, duas colunas, embaralhar, referência, gabarito e resolução), e pesquisar na internet sem sair da plataforma (Wikipédia dentro do app e atalhos para Google Acadêmico, YouTube, Khan Academy e INEP), criando questões a partir do texto encontrado.
+
+## 1.3.0 (em desenvolvimento, mesma branch da 1.2)
+**Novo**
+- Banco de questões ampliado para **13.088 questões autorais** (antes 2.767), sem nenhum enunciado repetido. Por matéria: Matemática 5.372, Física 2.994, Química 2.128, Geografia 837, Biologia 477, Raciocínio lógico 326, Português 298, Inglês 248, História 218, Literatura 116, Filosofia 76, Sociologia 54 e Direito 10.
+- 63 tipos novos de questão de exatas, incluindo nível ITA, IME e FUVEST (determinantes, complexos, polinômios, relações de Girard, gases, lentes, colisões, estequiometria, titulação e outros), e 26 tabelas novas de humanas, linguagens e natureza.
+- 32 estilos de prova para filtrar: ENEM, FUVEST, UNICAMP, ITA, IME, UFMG, PAS/UnB, UEMA, UNITINS, UERJ, Unesp e uma universidade de cada estado, com cidades da região nos enunciados. As questões são autorais e avisam que não são oficiais.
+
+**Melhorado**
+- Primeiro acesso: o banco vem num arquivo só, em vez de milhares de linhas pela API.
+- O app prepara o banco em segundo plano e as telas de questões abrem mais rápido.
+- Busca de duplicadas do painel com índice e sem comparar as questões geradas entre si.
+- Alternativas sem erros de formatação (ex.: "0,00 N" ou "18,0" como distrator foram eliminados).
+
+## 1.2.0 (em desenvolvimento, branch `claude/project-thread-miog5u`)
+Ainda não publicada: não está na `main`, no site nem no Supabase real. Vai para um projeto Supabase novo, para não mexer na 0.3 que está no ar.
+
+**Novo**
+- Banco de questões com 2.767 questões originais no estilo ENEM e vestibulares, em 13 matérias (inclui Literatura, Sociologia e Filosofia), com filtros, busca e nota estilo TRI nos simulados.
+- Temas de redação (24 propostas e as 5 competências, sem correção automática).
+- Flashcards criados pela plataforma a partir de um tema digitado.
+- Aba Resultados: horas por mês, registro de cada sessão (dia, hora, matéria), histórico de respostas, simulados e evolução dos flashcards.
+- Cronograma automático pelo objetivo ou pelas matérias e pesos do edital; o quadro da semana se ajusta ao tablet e ao computador.
+- Aulas dentro da plataforma (YouTube, Vimeo ou vídeo próprio sem download), material de apoio, marcar como assistida, questões antes e depois.
+- Tirar dúvidas com a professora, com assistente gratuito que procura explicações parecidas no banco.
+- Painel do Ryan: contas novas aguardando liberação, liberar aulas e materiais por aluno ou por grupo, desligar partes do app por aluno, ver última entrada, última aula e aulas concluídas, responder dúvidas.
+- 12 temas de cor, fundos, cantos e letras.
+- Proteção do conteúdo: sem botão direito, cópia ou arrasto; o conteúdo escurece ao trocar de janela ou apertar a tecla de print; registro de quem abriu cada aula e material.
+
+**Retirado**
+- "Usar sem conta": o app sempre abre na tela de entrada.
+- Backup: a rotina `backup.yml` e o baixar/restaurar dados da tela Conta.
+
+**Testes**: 25 de lógica, 59 do banco e 19 no navegador, todos aprovados.
+
+## 1.1.0 (em desenvolvimento, branch `claude/project-thread-air5ll`)
+Ainda não publicada: não está na `main`, no site nem no Supabase real.
+
+**Novo**
+- Professores: pedido em Minha conta e aprovação pelo Ryan; banco de questões individual e privado (criar, editar, excluir, imagem, gabarito, resolução, busca, histórico de versões); listas e simulados com questões próprias ou do banco geral; turmas com código; envio de listas com prazo; resultados de quem aceitou compartilhar; pedidos de correção.
+- Alunos: tela Minhas turmas (entrar pelo código, compartilhar ou não os resultados, sair, fazer as listas, inclusive sem internet depois de abertas).
+- Ryan: abas Professores e Pedidos de correção; filtro por banco de cada professor, por visibilidade e palavra-chave; aprovação de questões para o banco geral; busca de duplicadas; filtro de usuários por papel.
+- Banco: migrações 7 e 8 (8 tabelas novas, versões de questões, regras de acesso e imagens dos professores).
+- 14 testes automáticos novos (83 no total, todos executados e aprovados).
+
+**Alterado**
+- O papel "professor" deixou de ter acesso a todo o conteúdo (`content.manage`); agora tem só a própria área (`teacher.area`).
+- Documentação reorganizada com os nomes DOCUMENTACAO_GERAL, SISTEMA_PROFESSORES, SISTEMA_ALUNOS, SISTEMA_ADMINISTRATIVO, BANCO_DE_DADOS e HISTORICO_DE_ALTERACOES.
+
+## 0.3 (24/11/2026, enviada direto na `main`)
+Página única (`index.html`) ligada ao Supabase real, com os dados de cada aluno guardados num bloco JSON (`student_data`) e tabela `admins`. Guardada em `legado/index-v0.3.html`. É a versão que está no ar.
+
+## 1.0.0 (24/11/2026)
+Reconstrução completa da plataforma.
+
+**Novo**
+- Contas com cadastro, confirmação por e-mail, login, recuperação e troca de senha, gestão de sessões e exclusão da conta (Supabase Auth).
+- Banco de dados com 27 tabelas, Row Level Security em todas, correção das questões no servidor, auditoria e limites contra abuso.
+- Sincronização entre aparelhos que funciona offline (fila de envio, a última edição vence, indicador de pendências).
+- Questões com filtros completos, busca sem acento, dica, explicação, comentários, imagens, favoritos e simulados retomáveis.
+- Flashcards com coleções, favoritos e revisão espaçada; erros viram flashcards automaticamente.
+- Plano de estudos, metas, Pomodoro, anotações e painel de desempenho com dados reais.
+- Personalização salva na conta: temas, cores, cartões, densidade, letra e modo de tela (automático/computador/tablet/celular).
+- Painel do administrador: estatísticas, usuários e bloqueio, editor de questões, catálogo, materiais protegidos, moderação, configurações, permissões e auditoria.
+- Backup semanal criptografado e procedimento de recuperação testado.
+- 69 testes automáticos (lógica, banco e navegador) e integração contínua.
+
+**Mantido**
+- Funciona sem configuração em "modo local".
+- Dados da versão 0.2 são trazidos automaticamente na primeira abertura. A versão antiga está em `legado/`.
+
+## 0.2
+App de estudos estático com dados só no aparelho.
