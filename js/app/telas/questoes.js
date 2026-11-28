@@ -366,6 +366,7 @@ export default function Questoes({ params = [], modo }) {
         if (cfg) await begin({ mode: 'simulado', qs: cfg.ids.map(id => c.question(id)).filter(Boolean), title: cfg.title, limitMs: cfg.min * 60e3 });
         else history.replaceState(null, '', '#questoes');
       } else if (p0 === 'materia' && p1) setInitial({ ...EMPTY, subject: p1 });
+      else if (p0 === 'banca' && p1) setInitial({ ...EMPTY, board: p1, ...(params[2] ? { year: params[2] } : {}) });
       else if (p0 === 'conteudo' && p1) { const t = c.topic(+p1); setInitial({ ...EMPTY, subject: t ? String(t.subject_id) : '', topic: p1 }); }
       else if (p0 === 'codigos' && p1) { const qs = p1.split(',').map(x => c.questions.find(q => q.code === x.trim().toUpperCase())).filter(Boolean); if (qs.length) await begin({ mode: 'pratica', qs }); }
       else if (p0 === 'revisar') {

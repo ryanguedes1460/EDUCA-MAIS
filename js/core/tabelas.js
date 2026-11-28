@@ -7,7 +7,7 @@ export const USER_TABLES = {
     kind: 'mutable', conflict: 'user_id', localId: () => 'me',
     cols: ['theme', 'color_primary', 'color_secondary', 'color_accent', 'device_mode', 'card_style', 'density', 'font_scale', 'reduce_motion',
       'home_sections', 'daily_goal_min', 'focus_minutes', 'short_break_min', 'long_break_min', 'last_view',
-      'background', 'radius', 'font_family', 'custom_themes', 'protect_content', 'updated_at'],
+      'background', 'radius', 'font_family', 'custom_themes', 'protect_content', 'study_goal', 'updated_at'],
     fromRemote: r => ({ ...r, id: 'me' })
   },
   decks: { kind: 'mutable', conflict: 'id', cols: ['id', 'name', 'subject_id', 'color', 'is_favorite', 'kind', 'created_at', 'updated_at', 'deleted_at'] },

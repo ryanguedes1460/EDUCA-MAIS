@@ -1,7 +1,13 @@
 -- Gerado por scripts/gerar-provas.mjs. Matérias, conteúdos e bancas usados pelas questões do ENEM e dos concursos.
 insert into public.exam_boards (id, name, kind) overriding system value values
   (60, 'Estilo concursos do Maranhão', 'estilo'),
-  (61, 'Estilo concursos de prefeituras', 'estilo')
+  (61, 'Estilo concursos de prefeituras', 'estilo'),
+  (62, 'Estilo PAES/UEMA', 'estilo'),
+  (63, 'Estilo vestibular UEMASUL', 'estilo'),
+  (64, 'Estilo seletivo IFMA', 'estilo'),
+  (65, 'Estilo concursos do Piauí', 'estilo'),
+  (66, 'Estilo concursos do Pará', 'estilo'),
+  (67, 'Estilo concursos do Tocantins', 'estilo')
 on conflict (id) do nothing;
 insert into public.subjects (id, area_id, name, color, position) overriding system value values
   (14, 1, 'Espanhol', '#c2410c', 20),
@@ -9,7 +15,8 @@ insert into public.subjects (id, area_id, name, color, position) overriding syst
   (16, 1, 'Educação Física', '#16a34a', 22),
   (17, 5, 'Conhecimentos do Maranhão', '#b91c1c', 23),
   (18, 5, 'Informática', '#0369a1', 24),
-  (19, 5, 'Atendimento ao público', '#7c3aed', 25)
+  (19, 5, 'Atendimento ao público', '#7c3aed', 25),
+  (20, 5, 'Conhecimentos regionais', '#a16207', 26)
 on conflict (id) do nothing;
 insert into public.topics (id, subject_id, parent_id, name) overriding system value values
   (410, 5, null, 'Zoologia'),
@@ -34,6 +41,7 @@ insert into public.topics (id, subject_id, parent_id, name) overriding system va
   (498, 10, null, 'Legislação'),
   (500, 19, null, 'Atendimento ao público'),
   (502, 18, null, 'Informática'),
+  (507, 20, null, 'Conhecimentos regionais'),
   (400, 6, 123, 'Calor e termodinâmica'),
   (401, 7, 274, 'Funções e reações orgânicas'),
   (402, 5, 17, 'Plantas e fotossíntese'),
@@ -118,5 +126,8 @@ insert into public.topics (id, subject_id, parent_id, name) overriding system va
   (503, 18, 502, 'Editor de texto (Word)'),
   (504, 18, 502, 'Windows'),
   (505, 18, 502, 'Segurança e internet'),
-  (506, 18, 502, 'Planilhas (Excel e Calc)')
+  (506, 18, 502, 'Planilhas (Excel e Calc)'),
+  (508, 20, 507, 'Piauí'),
+  (509, 20, 507, 'Pará'),
+  (510, 20, 507, 'Tocantins')
 on conflict (id) do nothing;

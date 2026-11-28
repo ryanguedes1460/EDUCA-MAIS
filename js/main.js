@@ -17,7 +17,7 @@ import * as atividade from './core/atividade.js';
 import { startWorlds, applyWorld, WORLDS, worldOf, setWorld } from './app/mundos.js';
 import { Busca } from './app/busca.js';
 
-export const VERSION = '2.0.0-dev';
+export const VERSION = '2.2.0-dev';
 
 // ---------------- Telas ----------------
 // feature = parte que a professora pode liberar ou bloquear para cada aluno (js/core/controles.js)
@@ -46,6 +46,7 @@ export const VIEWS = {
   turmas: { legacy: L('turmas'), title: 'Minhas turmas', feature: 'turmas', needs: 'login' },
   professor: { legacy: L('professor'), title: 'Área do professor', needs: 'teacher.area' },
   ferramentas: { load: T('ferramentas'), title: 'Ferramentas do professor' },
+  objetivo: { load: T('objetivo'), title: 'Meu objetivo' },
   admin: { legacy: L('admin'), title: 'Painel da professora', needs: 'admin.access' }
 };
 // Endereços da versão anterior continuam funcionando
@@ -146,6 +147,10 @@ function App() {
   if (auth.state.recovery && view !== 'entrar') { view = 'entrar'; params = ['nova-senha']; }
   if (view === 'professor' && configured && auth.isLogged() && !auth.can('teacher.area')) { view = 'conta'; params = []; history.replaceState(null, '', '#conta'); toast('A área do professor é liberada depois que a administração aprova o seu pedido (em Minha conta).'); }
   if (view === 'admin' && configured && auth.isLogged() && !auth.can('admin.access')) { view = 'inicio'; params = []; history.replaceState(null, '', '#inicio'); toast('Área restrita à administração.'); }
+  // Primeiro acesso: pergunta o objetivo (uma vez; "responder depois" adia por 3 dias)
+  const redirObjetivo = view === 'inicio' && precisaObjetivo(sst.state);
+  if (redirObjetivo) { view = 'objetivo'; params = []; }
+  useEffect(() => { if (redirObjetivo) { history.replaceState(null, '', '#objetivo'); setRoute({ view: 'objetivo', params: [] }); } }, [redirObjetivo]);
   const def = VIEWS[view];
   let gate = null;
   if (auth.isBlocked() && view !== 'conta') gate = html`<${Blocked} reason="conta" />`;
@@ -203,6 +208,14 @@ function App() {
       ${modal}
     </div>
   </${AppCtx.Provider}>`;
+}
+
+function precisaObjetivo(syncState) {
+  if (!aparencia.foiCarregado() || aparencia.settings().study_goal) return false;
+  if (configured && (!auth.isLogged() || controles.isPending() || auth.isBlocked() || syncState === 'syncing')) return false;
+  if (auth.can('admin.access') || (auth.can('teacher.area') && controles.requestedRole() === 'teacher')) return false;
+  try { const t = +localStorage.getItem('em:objetivo-depois'); if (t && Date.now() - t < 3 * 864e5) return false; } catch {}
+  return true;
 }
 
 const saveLastView = debounce(v => { if (aparencia.settings().last_view !== v) aparencia.save({ last_view: v }).catch(() => {}); }, 4000);

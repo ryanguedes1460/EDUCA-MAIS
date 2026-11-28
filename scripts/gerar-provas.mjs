@@ -1,5 +1,5 @@
 // Gera o banco de PROVAS da Educa Mais (conteudo/provas.json), que completa o banco autoral:
-//   1) Questões OFICIAIS do ENEM de 2009 a 2023, com a referência real (ano, dia e número da questão).
+//   1) Questões OFICIAIS do ENEM de 2009 a 2025, com a referência real (ano, dia e número da questão).
 //      Fonte dos textos: projeto aberto github.com/yunger7/enem-api, que reúne as provas publicadas pelo INEP.
 //      Matéria e conteúdo são classificados automaticamente (scripts/provas/classificar.mjs).
 //   2) Questões AUTORAIS no estilo dos concursos do Maranhão e de prefeituras (scripts/provas/concursos.mjs).
@@ -12,7 +12,7 @@
 import { writeFileSync, mkdirSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { classificar, diaDaProva } from './provas/classificar.mjs';
-import { MARANHAO, PREFEITURAS, INFORMATICA, CIDADES_PREFEITURAS } from './provas/concursos.mjs';
+import { MARANHAO, PREFEITURAS, INFORMATICA, CIDADES_PREFEITURAS, VIZINHOS, CIDADES_VIZINHOS, CIDADES_VEST_MA } from './provas/concursos.mjs';
 import EXATAS from './banco/exatas.mjs';
 import EXATAS2 from './banco/exatas2.mjs';
 import { rng, CIDADES } from './banco/util.mjs';
@@ -34,6 +34,8 @@ async function baixarEnem() {
   await Promise.all(Array.from({ length: 16 }, w));
 }
 await baixarEnem();
+// 2024 e 2025 ainda não estão na enem-api: vêm de duas extrações conferidas entre si (ver o script).
+if (!readdirSync(CACHE_Q).some(f => f.startsWith('2025-'))) execFileSync('python3', ['-I', P('scripts/provas/enem_recentes.py')], { stdio: 'inherit' });
 
 // ---------------- Catálogo ----------------
 const cat = JSON.parse(readFileSync(P('conteudo/catalogo.json')));
@@ -44,11 +46,18 @@ const NOVAS_MATERIAS = [
   { id: 16, area: 1, name: 'Educação Física', color: '#16a34a' },
   { id: 17, area: 5, name: 'Conhecimentos do Maranhão', color: '#b91c1c' },
   { id: 18, area: 5, name: 'Informática', color: '#0369a1' },
-  { id: 19, area: 5, name: 'Atendimento ao público', color: '#7c3aed' }
+  { id: 19, area: 5, name: 'Atendimento ao público', color: '#7c3aed' },
+  { id: 20, area: 5, name: 'Conhecimentos regionais', color: '#a16207' }
 ];
 const NOVAS_BANCAS = [
   { id: 60, name: 'Estilo concursos do Maranhão', kind: 'estilo' },
-  { id: 61, name: 'Estilo concursos de prefeituras', kind: 'estilo' }
+  { id: 61, name: 'Estilo concursos de prefeituras', kind: 'estilo' },
+  { id: 62, name: 'Estilo PAES/UEMA', kind: 'estilo' },
+  { id: 63, name: 'Estilo vestibular UEMASUL', kind: 'estilo' },
+  { id: 64, name: 'Estilo seletivo IFMA', kind: 'estilo' },
+  { id: 65, name: 'Estilo concursos do Piauí', kind: 'estilo' },
+  { id: 66, name: 'Estilo concursos do Pará', kind: 'estilo' },
+  { id: 67, name: 'Estilo concursos do Tocantins', kind: 'estilo' }
 ];
 const subjects = [...cat.subjects.map(s => ({ id: s.id, name: s.name })), ...banco.subjects.map(s => ({ id: s.id, name: s.name })), ...NOVAS_MATERIAS];
 const topics = [...cat.topics.map(t => ({ id: t.id, subject: t.subject_id ?? t.subject, parent: t.parent_id ?? t.parent ?? null, name: t.name })), ...banco.topics.map(t => ({ id: t.id, subject: t.subject_id, parent: t.parent_id ?? null, name: t.name }))];
@@ -62,7 +71,7 @@ function topicId(subjectId, [pai, filho]) {
   if (!f) { f = { id: nextTopic++, subject: subjectId, parent: p.id, name: filho }; topics.push(f); novosTopicos.push(f); }
   return f.id;
 }
-const SIGLA = { 'Português': 'POR', 'Inglês': 'ING', 'Matemática': 'MAT', 'Raciocínio lógico': 'RLO', 'Biologia': 'BIO', 'Física': 'FIS', 'Química': 'QUI', 'História': 'HIS', 'Geografia': 'GEO', 'Direito': 'DIR', 'Literatura': 'LIT', 'Sociologia': 'SOC', 'Filosofia': 'FIL', 'Espanhol': 'ESP', 'Artes': 'ART', 'Educação Física': 'EDF', 'Conhecimentos do Maranhão': 'CMA', 'Informática': 'INF', 'Atendimento ao público': 'ATP' };
+const SIGLA = { 'Português': 'POR', 'Inglês': 'ING', 'Matemática': 'MAT', 'Raciocínio lógico': 'RLO', 'Biologia': 'BIO', 'Física': 'FIS', 'Química': 'QUI', 'História': 'HIS', 'Geografia': 'GEO', 'Direito': 'DIR', 'Literatura': 'LIT', 'Sociologia': 'SOC', 'Filosofia': 'FIL', 'Espanhol': 'ESP', 'Artes': 'ART', 'Educação Física': 'EDF', 'Conhecimentos do Maranhão': 'CMA', 'Informática': 'INF', 'Atendimento ao público': 'ATP', 'Conhecimentos regionais': 'REG' };
 
 // ---------------- 1) ENEM oficial ----------------
 const imagens = [];   // [origem, destino] para converter
@@ -82,7 +91,7 @@ async function garantirImagem(url) {
 }
 const md = (txt, ano, chave) => String(txt || '').replace(/!\[[^\]]*\]\((https:\/\/enem\.dev\/[^)\s]+)\)/g, (_, u) => `![](${imagem(u, ano, chave)})`).replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
 
-const enem = [];
+const enem = [], enemNovas = [];
 let puladas = 0;
 const arquivos = readdirSync(CACHE_Q).sort((a, b) => { const [ya, ia] = a.split('-').map(x => parseInt(x)); const [yb, ib] = b.split('-').map(x => parseInt(x)); return ya - yb || ia - ib || a.localeCompare(b); });
 for (const f of arquivos) {
@@ -102,11 +111,11 @@ for (const f of arquivos) {
   if (new Set(opts).size !== 5 || opts.some(o => !o || o.length > 2000)) { puladas++; continue; }
   const correta = 'ABCDE'.indexOf(q.correctAlternative);
   const lingua = q.language === 'ingles' ? ' (Inglês)' : q.language === 'espanhol' ? ' (Espanhol)' : '';
-  enem.push({
+  (q.year >= 2024 ? enemNovas : enem).push({
     code: `ENEM-${q.year}-${String(q.index).padStart(3, '0')}${q.language ? '-' + q.language.slice(0, 3).toUpperCase() : ''}`,
     subject: s, topic: topicId(s, topic), level: 'enem', difficulty: 3, theme: topic[1], statement,
     explanation: `Gabarito oficial do INEP: alternativa ${q.correctAlternative}.`, hint: null, options: opts, correct: correta, board: 2, year: q.year,
-    source: `ENEM ${q.year} · ${diaDaProva(q.year, q.index)}º dia · Questão ${q.index}${lingua} · Prova oficial aplicada pelo INEP.`
+    source: `ENEM ${q.year} · ${diaDaProva(q.year, q.index)}º dia · Questão ${q.index}${lingua} · Prova oficial aplicada pelo INEP.${q.fonte ? ' Texto extraído do caderno oficial e gabarito conferido em duas fontes; o número pode variar conforme a cor do caderno.' : ''}`
   });
 }
 
@@ -114,7 +123,8 @@ for (const f of arquivos) {
 const vistos = new Set(banco.q.map(x => x[6]));
 const concursos = [];
 const contador = {};
-function gerar(familias, board, fator = 1, cidades = null) {
+const NOME_BANCA = { 60: 'concursos do Maranhão', 61: 'concursos de prefeituras', 62: 'PAES/UEMA', 63: 'vestibular da UEMASUL', 64: 'seletivo do IFMA', 65: 'concursos do Piauí', 66: 'concursos do Pará', 67: 'concursos do Tocantins' };
+function gerar(familias, board, fator = 1, cidades = null, destino = concursos, nivel = null) {
   let semente = 20261128 + board * 1000;
   for (const fam of familias) {
     const s = sid(fam.subject), t = topicId(s, fam.topic);
@@ -127,8 +137,9 @@ function gerar(familias, board, fator = 1, cidades = null) {
       if (!q || vistos.has(q.statement) || /NaN|undefined|Infinity|\[object/.test(q.statement + q.explanation + q.options.join('|'))) continue;
       if (q.options.length !== 5 || new Set(q.options).size !== 5) continue;
       vistos.add(q.statement); feitas++;
-      const nomeBanca = board === 60 ? 'concursos do Maranhão' : 'concursos de prefeituras';
-      concursos.push({ subject: s, topic: t, level: 'concurso', difficulty: fam.difficulty, theme: fam.topic[1], statement: q.statement, explanation: q.explanation, hint: q.hint || null, options: q.options, correct: q.correct, board, year: 2026, source: `Questão autoral da Educa Mais no estilo dos ${nomeBanca} (2026). Não é uma questão oficial.` });
+      const nomeBanca = NOME_BANCA[board];
+      const ehVest = board >= 62 && board <= 64;
+      destino.push({ subject: s, topic: t, level: nivel || (ehVest ? fam.level : 'concurso'), difficulty: fam.difficulty, theme: fam.topic[1], statement: q.statement, explanation: q.explanation, hint: q.hint || null, options: q.options, correct: q.correct, board, year: 2026, source: ehVest ? `Questão autoral da Educa Mais no estilo do ${nomeBanca} (2026). Não é uma questão oficial.` : `Questão autoral da Educa Mais no estilo dos ${nomeBanca} (2026). Não é uma questão oficial.` });
     }
   }
 }
@@ -140,15 +151,27 @@ const exatas = [...EXATAS, ...EXATAS2].filter(f => ['Matemática', 'Raciocínio 
 gerar(exatas, 61, 0.35, CIDADES_PREFEITURAS);
 CIDADES.splice(0, CIDADES.length, ...CIDADES_PADRAO);
 
+// ---------------- 3) Vestibulares do Maranhão e concursos dos estados vizinhos (2.2) ----------------
+const novas = [];
+const porNivel = (niveis, materias) => [...EXATAS, ...EXATAS2].filter(f => niveis.includes(f.level) && materias.includes(f.subject));
+gerar(porNivel(['enem', 'medio'], ['Matemática', 'Física', 'Química']), 62, 0.12, CIDADES_VEST_MA, novas);
+gerar(porNivel(['enem', 'medio'], ['Matemática', 'Física', 'Química']), 63, 0.06, ['Imperatriz', 'Açailândia', 'Estreito', 'Porto Franco', 'Carolina', 'Grajaú', 'Amarante do Maranhão'], novas);
+gerar(porNivel(['fundamental'], ['Matemática', 'Física', 'Química']), 64, 0.5, CIDADES_VEST_MA, novas);
+for (const b of [65, 66, 67]) {
+  gerar(VIZINHOS[b], b, 1, null, novas);
+  gerar(porNivel(['enem', 'medio', 'concurso'], ['Matemática', 'Raciocínio lógico']).filter(f => f.difficulty <= 3), b, 0.06, CIDADES_VIZINHOS[b], novas, 'concurso');
+}
+CIDADES.splice(0, CIDADES.length, ...CIDADES_PADRAO);
+
 // ---------------- Saídas ----------------
 const hex = (n, w) => n.toString(16).padStart(w, '0');
 const pid = n => `e2000000-0000-4000-a000-${hex(n, 12)}`;
 const poid = (n, p) => `e2000000-0000-4000-b000-${hex(n * 10 + p, 12)}`;
-const todas = [...enem, ...concursos].map((q, i) => {
+const todas = [...enem, ...concursos, ...enemNovas, ...novas].map((q, i) => {
   if (!q.code) { const sg = SIGLA[subjects.find(s => s.id === q.subject).name]; contador[sg] = (contador[sg] || 0) + 1; q.code = `CO-${sg}-${String(contador[sg]).padStart(5, '0')}`; }
   return { ...q, id: pid(i + 1), n: i + 1 };
 });
-const VERSAO = 1;
+const VERSAO = 2;
 const app = {
   versao: VERSAO,
   boards: NOVAS_BANCAS,

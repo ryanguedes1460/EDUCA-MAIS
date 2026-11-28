@@ -8,6 +8,7 @@ import { mergeRemote, toRemote, fromRemote, USER_TABLES, PUSH_ORDER } from '../.
 import { esc, html, raw, norm, dayKey } from '../../js/core/util.js';
 import { render as renderSW, renderInstaller, renderPostRestore } from '../../scripts/build.mjs';
 import seed from '../../js/data/conteudo-inicial.js';
+import { normalizar, montarPlano, notaAtual, corteSugerido } from '../../js/lib/objetivo.js';
 
 const DAY = 864e5;
 const T0 = Date.UTC(2026, 10, 24, 12);
@@ -225,5 +226,32 @@ describe('cronograma automático', () => {
     const out = montarCronograma({ edital: 'Direito Penal: 3\nPortuguês: 1', dias: [0, 1, 2, 3], horas: 2, bloco: 50 });
     const pen = out.filter(t => t.title === 'Direito Penal').length, por = out.filter(t => t.title === 'Português').length;
     assert.ok(pen > por);
+  });
+});
+
+describe('objetivo e nota de corte', () => {
+  test('limpa as respostas e respeita a escala', () => {
+    const o = normalizar({ tipo: 'enem', ja_fez: true, notas: { lc: '620', ch: 5000, mt: '540,5' }, meta: '720', curso: 'Direito', dificuldades: ['Matemática', 42] });
+    assert.deepEqual(o.notas, { lc: 620, mt: 540.5 });
+    assert.equal(o.meta, 720);
+    assert.deepEqual(o.dificuldades, ['Matemática', '42']);
+    assert.equal(normalizar({ tipo: 'concurso', meta: 140 }).meta, null);
+    assert.equal(normalizar({ tipo: 'xyz' }).tipo, 'enem');
+  });
+  test('calcula quanto falta e dá mais peso à área mais fraca', () => {
+    const o = normalizar({ tipo: 'enem', ja_fez: true, notas: { lc: 650, ch: 650, cn: 600, mt: 500, red: 700 }, meta: 720, data_prova: '2027-11-07' });
+    assert.equal(notaAtual(o), 620);
+    const p = montarPlano(o, {}, new Date('2027-05-09T12:00:00'));
+    assert.equal(p.falta, 100);
+    assert.equal(p.semanas, 26);
+    assert.equal(p.distrib[0].materia, 'Matemática');
+    assert.equal(p.fraquezas[0].area, 'Matemática');
+    assert.ok(Math.abs(p.distrib.reduce((a, d) => a + d.horas, 0) - p.horas) <= 3);
+  });
+  test('concurso usa as matérias do concurso escolhido', () => {
+    const p = montarPlano(normalizar({ tipo: 'concurso', prova: 'Prefeituras do Maranhão', dificuldades: ['Informática'] }));
+    assert.ok(p.distrib.some(d => d.materia === 'Conhecimentos do Maranhão'));
+    assert.equal(p.falta, null);
+    assert.equal(corteSugerido('Medicina') > corteSugerido('Pedagogia'), true);
   });
 });

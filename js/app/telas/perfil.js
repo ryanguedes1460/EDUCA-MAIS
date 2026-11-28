@@ -17,6 +17,7 @@ export default function Perfil() {
   const nome = app.profile?.display_name || app.user?.email || 'Estudante';
   const cur = worldOf(s.theme);
   const links = [
+    ['🎯', 'Meu objetivo', 'Prova, meta de nota e o plano para chegar lá', 'objetivo', true],
     ['👤', 'Minha conta', 'Nome, senha, aparelhos conectados e seus dados', 'conta', auth.isLogged() || !app.configured],
     ['💬', 'Fale conosco', 'Dúvidas para o professor, erros para o desenvolvedor', 'duvidas', auth.isLogged()],
     ['🐞', 'Relatar um erro', 'Algo não funcionou? Avise o desenvolvedor', 'duvidas/erro/perfil', auth.isLogged()],

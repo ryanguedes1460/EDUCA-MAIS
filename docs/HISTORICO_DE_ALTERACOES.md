@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 2.2.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **Meu objetivo** (primeiro acesso): a pessoa escolhe o objetivo (ENEM e faculdade, vestibular, concurso ou escola), a prova, a faculdade e o curso (opcionais), as dificuldades, quantas horas estuda por semana, se já fez a prova e quais notas tirou, e a meta. O app monta um plano: quanto falta para a nota de corte, quanto subir por semana, onde ganhar mais pontos, horas por matéria, passo a passo e o cronograma automático. "Responder depois" adia por 3 dias. As notas de corte sugeridas são referências aproximadas e o aviso aparece na tela.
+- O painel mostra o objetivo de cada conta (Atividade e aparelhos > conta).
+- **ENEM 2024 e 2025**: 171 questões oficiais. Como ainda não estão na enem-api, vêm de duas extrações independentes dos cadernos do INEP e só entram quando as duas concordam no gabarito. As que dependem de imagem ficaram de fora por enquanto.
+- **Vestibulares do Maranhão**: 1.158 questões autorais no estilo PAES/UEMA, vestibular da UEMASUL e seletivo do IFMA (a UFMA usa o ENEM, que está no banco).
+- **Concursos dos estados vizinhos**: 471 questões autorais no estilo de concursos do Piauí, do Pará e do Tocantins, com conhecimentos regionais.
+- Total no banco: 18.805 questões.
+
 ## 2.1.0 (em desenvolvimento, branch do PR #3)
 **Novo**
 - **2.737 questões oficiais do ENEM** (2009 a 2023), com imagens, gabarito oficial do INEP e referência completa: ano, dia, número da questão, matéria e conteúdo. Filtros por origem (oficial ou autoral) e por ano da prova. Matéria e conteúdo foram classificados automaticamente pelo número da questão e por palavras-chave.

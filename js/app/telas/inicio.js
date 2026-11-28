@@ -60,6 +60,7 @@ export default function Inicio() {
             <button class="btn primary" onClick=${() => go('desafio')}>🔥 Desafio do dia</button>
             ${aberto ? html`<button class="btn" onClick=${() => go('questoes', 'simulado', aberto.id)}>▶ Continuar simulado</button>` : ult ? html`<button class="btn" onClick=${() => go(ult)}>▶ Continuar de onde parou</button>` : html`<button class="btn" onClick=${() => go('questoes')}>✏️ Praticar questões</button>`}
             <button class="btn ghost" onClick=${() => go('foco')}>⏱️ Sala de foco</button>
+            <button class="btn ghost" onClick=${() => go('objetivo')}>🎯 ${s.study_goal?.meta ? `Meta: ${String(s.study_goal.meta).replace('.', ',')}${s.study_goal.tipo === 'concurso' || s.study_goal.tipo === 'vestibular' ? '%' : ''}` : 'Meu objetivo'}</button>
           </div>
         </div>
         <div class="card pad" style="min-width:250px;flex:0 1 300px;background:var(--panel2)">

@@ -8,7 +8,7 @@ export const DEFAULTS = {
   card_style: 'elevated', density: 'comfortable', font_scale: 1, reduce_motion: false,
   home_sections: ['continuar', 'metas', 'revisoes', 'trilha', 'ferramentas'], daily_goal_min: 60,
   focus_minutes: 25, short_break_min: 5, long_break_min: 15, last_view: null,
-  background: 'none', radius: 'normal', font_family: 'padrao', custom_themes: [], protect_content: true
+  background: 'none', radius: 'normal', font_family: 'padrao', custom_themes: [], protect_content: true, study_goal: null
 };
 
 export const THEMES = [
@@ -40,11 +40,14 @@ export const THEME_FIELDS = ['theme', 'color_primary', 'color_secondary', 'color
 export const PALETTE = ['#2340b8', '#4f46e5', '#7b3fb8', '#b8407b', '#c2362f', '#d9480f', '#b7791f', '#1f8a4c', '#0e7c86', '#0369a1', '#334155', '#ffd23f'];
 
 let current = { ...DEFAULTS };
+let carregado = false;
+export const foiCarregado = () => carregado;
 export const settings = () => current;
 
 export async function load() {
   const s = await store.get('user_settings', 'me');
   current = { ...DEFAULTS, ...(s || {}) };
+  carregado = true;
   apply();
   return current;
 }

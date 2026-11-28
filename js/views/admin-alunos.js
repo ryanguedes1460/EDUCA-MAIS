@@ -6,7 +6,7 @@ import { FEATURES, PROF_FEATURES } from '../core/controles.js';
 
 const PAPEL = { student: 'Aluno', teacher: 'Professor', admin: 'Administração' };
 /** Nome legível das ações do registro de atividade. */
-export const ACOES = {
+export const ACOES = { 'objetivo.salvar': 'Respondeu o objetivo', 'objetivo.cronograma': 'Montou cronograma pelo objetivo',
   'conta.entrar': 'Entrou na conta', 'conta.sair': 'Saiu da conta', 'tela.abrir': 'Abriu a tela', 'questao.responder': 'Respondeu questão',
   'simulado.entregar': 'Entregou simulado', 'desafio.concluir': 'Concluiu o desafio do dia', 'pratica.concluir': 'Terminou prática', 'prova.tentativa': 'Começou ou continuou prova',
   'flashcard.revisar': 'Revisou flashcard', 'flashcard.salvar': 'Salvou flashcard', 'baralho.salvar': 'Salvou baralho', 'estudo.sessao': 'Registrou tempo de estudo',
@@ -276,6 +276,11 @@ export function views(cat) {
           <div><button class="linkbtn" type="button" data-action="aba" data-v="contas">← Todas as contas</button></div>
           <div class="card stack"><div class="row between"><h3>${p.display_name || ''} <span class="muted small">${p.email || ''}</span></h3><span class="chip">${PAPEL[p.role] || p.role || ''}</span></div>
             <div class="grid g4">${[[String((d.devices || []).length), 'aparelhos diferentes'], [String(ativos), 'aparelhos em uso'], [String((d.logins || []).length), 'logins registrados'], [p.last_seen_at ? fmtDateTime(p.last_seen_at) : 'nunca', 'última vez no app']].map(([v, k]) => html`<div class="stat"><div class="v num" style="font-size:1.05rem">${v}</div><div class="k">${k}</div></div>`)}</div></div>
+          ${p.objetivo ? html`<div class="card stack"><h3>Objetivo informado</h3>
+            <p><b>${{ enem: 'ENEM e faculdade', vestibular: 'Vestibular', concurso: 'Concurso', escola: 'Escola' }[p.objetivo.tipo] || ''}</b>${p.objetivo.prova ? ' · ' + p.objetivo.prova : ''}${p.objetivo.instituicao ? ' · ' + p.objetivo.instituicao : ''}${p.objetivo.curso ? ' · ' + p.objetivo.curso : ''}${p.objetivo.data_prova ? ' · prova em ' + p.objetivo.data_prova.split('-').reverse().join('/') : ''}</p>
+            <p class="small">Meta: <b>${p.objetivo.meta ?? '–'}</b>${p.objetivo.ja_fez ? ` · já fez a prova${p.objetivo.ano_anterior ? ' em ' + p.objetivo.ano_anterior : ''}: ${Object.keys(p.objetivo.notas || {}).length ? Object.entries(p.objetivo.notas).map(([k, v]) => k.toUpperCase() + ' ' + v).join(', ') : (p.objetivo.nota_geral ?? '–')}` : ' · ainda não fez a prova'} · ${p.objetivo.horas_semana || '?'} h por semana</p>
+            ${(p.objetivo.dificuldades || []).length || (p.objetivo.outras || []).length ? html`<div class="row" style="flex-wrap:wrap;gap:6px">${[...(p.objetivo.dificuldades || []), ...(p.objetivo.outras || [])].map(x => html`<span class="chip warn">${x}</span>`)}</div>` : ''}
+            ${p.objetivo.obs ? html`<p class="small muted">"${p.objetivo.obs}"</p>` : ''}</div>` : ''}
           <div class="card stack"><h3>Aparelhos</h3>
             ${(d.devices || []).length ? html`<div class="table-wrap"><table class="t"><thead><tr><th>Aparelho</th><th>Logins</th><th>Primeiro acesso</th><th>Último acesso</th><th>Situação</th></tr></thead><tbody>
               ${d.devices.map(x => html`<tr><td>${nomeAparelho(x)}</td><td class="num">${x.logins}</td><td class="small">${fmtDateTime(x.first_seen)}</td><td class="small">${fmtDateTime(x.last_seen)}</td><td>${x.active ? html`<span class="chip good">em uso</span>` : html`<span class="chip">encerrado</span>`}</td></tr>`)}

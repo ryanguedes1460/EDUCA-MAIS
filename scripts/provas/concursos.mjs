@@ -297,3 +297,57 @@ export const INFORMATICA = [
 ];
 
 export const CIDADES_PREFEITURAS = ['Pinheiro', 'Chapadinha', 'Barra do Corda', 'Grajaú', 'Pedreiras', 'Viana', 'Itapecuru-Mirim', 'Zé Doca', 'Coroatá', 'Presidente Dutra', 'Santa Luzia', 'Buriticupu', 'Lago da Pedra', 'Estreito', 'Tutóia', 'São Bento', 'Rosário', 'Vargem Grande', 'Santa Inês', 'Açailândia', 'Codó', 'Bacabal', 'Paço do Lumiar', 'Raposa'];
+
+// ---------------- Estados vizinhos: Piauí, Pará e Tocantins ----------------
+// Conhecimentos regionais cobrados em concursos estaduais e municipais desses estados.
+const PIAUI = [
+  { a: 'Teresina', b: 'capital do Piauí, fundada em 1852 entre os rios Parnaíba e Poti, para substituir Oeiras' },
+  { a: 'Oeiras', b: 'primeira capital do Piauí, até 1852' },
+  { a: 'Batalha do Jenipapo', b: 'combate de 13 de março de 1823, em Campo Maior, pela Independência do Brasil' },
+  { a: 'Serra da Capivara', b: 'parque nacional em São Raimundo Nonato, com pinturas rupestres, Patrimônio Mundial da UNESCO desde 1991' },
+  { a: 'Sete Cidades', b: 'parque nacional no norte do estado, com formações rochosas que lembram ruínas' },
+  { a: 'Delta do Parnaíba', b: 'delta em mar aberto, com ilhas, dunas e manguezais, na divisa com o Maranhão' },
+  { a: 'Cajuína', b: 'bebida típica feita do suco do caju clarificado, reconhecida como patrimônio cultural do Brasil' },
+  { a: 'Litoral piauiense', b: 'o menor litoral entre os estados brasileiros, com cerca de 66 km' }
+];
+const PARA = [
+  { a: 'Belém', b: 'capital do Pará, fundada em 1616 a partir do Forte do Presépio' },
+  { a: 'Cabanagem', b: 'revolta popular de 1835 a 1840, com indígenas, negros e mestiços pobres, no período regencial' },
+  { a: 'Adesão do Pará à Independência', b: 'fato de 15 de agosto de 1823' },
+  { a: 'Círio de Nazaré', b: 'procissão religiosa de outubro em Belém, reconhecida como patrimônio imaterial' },
+  { a: 'Ver-o-Peso', b: 'mercado e feira às margens da baía do Guajará, cartão-postal de Belém' },
+  { a: 'Ilha de Marajó', b: 'maior ilha fluviomarítima do mundo, na foz do rio Amazonas' },
+  { a: 'Serra dos Carajás', b: 'província mineral do sudeste do estado, com grandes reservas de minério de ferro' },
+  { a: 'Usina de Tucuruí', b: 'hidrelétrica construída no rio Tocantins' },
+  { a: 'Usina de Belo Monte', b: 'hidrelétrica construída no rio Xingu, perto de Altamira' },
+  { a: 'Carimbó', b: 'ritmo e dança de origem indígena e africana, reconhecido como patrimônio cultural do Brasil' },
+  { a: 'Santarém', b: 'cidade do oeste paraense, no encontro dos rios Tapajós e Amazonas' }
+];
+const TOCANTINS = [
+  { a: 'Criação do Tocantins', b: 'desmembramento do norte de Goiás pela Constituição Federal de 1988' },
+  { a: 'Palmas', b: 'capital do Tocantins, cidade planejada fundada em 1989' },
+  { a: 'Miracema do Tocantins', b: 'capital provisória do estado em 1989, antes de Palmas' },
+  { a: 'Jalapão', b: 'região de dunas, cachoeiras e fervedouros, onde se faz artesanato de capim-dourado' },
+  { a: 'Ilha do Bananal', b: 'maior ilha fluvial do mundo, formada pelo rio Araguaia' },
+  { a: 'Bico do Papagaio', b: 'extremo norte do estado, no encontro dos rios Tocantins e Araguaia' },
+  { a: 'Natividade', b: 'cidade histórica ligada à mineração de ouro no século XVIII' },
+  { a: 'Araguaína', b: 'segunda cidade mais populosa do Tocantins, polo do norte do estado' }
+];
+const regional = (estado, itens, dica) => familia({
+  subject: 'Conhecimentos regionais', topic: ['Conhecimentos regionais', estado], level: 'concurso', difficulty: 2, itens,
+  formatos: [it => ({ campo: 'a', statement: `Nos conhecimentos sobre o estado do ${estado}, qual item corresponde a: ${it.b}?` }), it => ({ campo: 'b', statement: `Sobre o estado do ${estado}, o item "${it.a}" se refere a:` })],
+  explicar: it => `${it.a}: ${it.b}.`, dica
+});
+export const VIZINHOS = {
+  60: [],
+  65: [regional('Piauí', PIAUI, 'Teresina (1852) substituiu Oeiras; Jenipapo foi em 1823, em Campo Maior.')],
+  66: [regional('Pará', PARA, 'Belém (1616), Cabanagem (1835–1840), Adesão (15 de agosto de 1823).')],
+  67: [regional('Tocantins', TOCANTINS, 'Estado criado em 1988; Palmas é de 1989.')]
+};
+export const CIDADES_VIZINHOS = {
+  65: ['Teresina', 'Parnaíba', 'Picos', 'Floriano', 'Piripiri', 'Campo Maior', 'Oeiras', 'Barras'],
+  66: ['Belém', 'Ananindeua', 'Santarém', 'Marabá', 'Parauapebas', 'Castanhal', 'Altamira', 'Abaetetuba'],
+  67: ['Palmas', 'Araguaína', 'Gurupi', 'Porto Nacional', 'Paraíso do Tocantins', 'Colinas do Tocantins', 'Guaraí', 'Tocantinópolis']
+};
+// Vestibulares do Maranhão (o processo da UFMA usa o ENEM/SISU; as questões oficiais do ENEM estão no banco).
+export const CIDADES_VEST_MA = ['São Luís', 'Imperatriz', 'Caxias', 'Timon', 'Bacabal', 'Codó', 'Balsas', 'Açailândia', 'Santa Inês', 'Pinheiro', 'Chapadinha', 'Barra do Corda', 'Grajaú', 'Pedreiras'];

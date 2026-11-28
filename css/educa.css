@@ -605,3 +605,11 @@ table.t td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-a
   #print-root .pf { margin-top: 16px; font-size: 8.5pt; color: #555; border-top: 1px solid #999; padding-top: 4px; }
   @page { margin: 14mm 12mm; }
 }
+
+/* Meu objetivo (2.2) */
+.steps { display: flex; gap: 6px; }
+.steps span { flex: 1; height: 6px; border-radius: 99px; background: var(--panel2); }
+.steps span.on { background: var(--accent); }
+.pick-card { display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer; border: 2px solid var(--line); font: inherit; color: inherit; }
+.pick-card:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
+.pick-card.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }

@@ -6,6 +6,7 @@ import * as store from '../core/store.js';
 import * as auth from '../core/auth.js';
 
 const TELAS = [
+  ['objetivo', '🎯', 'Meu objetivo', 'nota de corte, prova, plano para passar, vestibular, concurso'],
   ['inicio', '🏠', 'Início', 'painel do dia, missões, nível'], ['estudar', '📚', 'Estudar', 'trilhas por matéria'], ['aulas', '🎬', 'Aulas', 'videoaulas liberadas'],
   ['praticar', '🎯', 'Praticar', 'modos de treino'], ['questoes', '✏️', 'Banco de questões', 'filtros por prova, matéria, dificuldade'], ['desafio', '🔥', 'Desafio do dia', '5 questões novas todo dia'],
   ['erros', '🩹', 'Caderno de erros', 'refazer o que errou'], ['flashcards', '🃏', 'Flashcards', 'revisão espaçada'], ['foco', '⏱️', 'Sala de foco', 'pomodoro, sons, meta'],

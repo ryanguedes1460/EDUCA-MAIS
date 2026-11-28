@@ -151,7 +151,8 @@ begin
     raise exception 'Acesso negado.' using errcode = '42501';
   end if;
   return jsonb_build_object(
-    'profile', (select jsonb_build_object('id', p.id, 'display_name', p.display_name, 'role', p.role, 'status', p.status, 'created_at', p.created_at, 'last_seen_at', p.last_seen_at, 'email', u.email)
+    'profile', (select jsonb_build_object('id', p.id, 'display_name', p.display_name, 'role', p.role, 'status', p.status, 'created_at', p.created_at, 'last_seen_at', p.last_seen_at, 'email', u.email,
+                                      'objetivo', (select st.study_goal from public.user_settings st where st.user_id = p.id))
                   from public.profiles p join auth.users u on u.id = p.id where p.id = p_user),
     'logins', coalesce((select jsonb_agg(x order by x.started_at desc) from (
         select s.id, s.started_at, s.last_seen_at, s.ended_at, s.device, s.platform, s.device_id, left(s.user_agent, 160) as user_agent
@@ -244,3 +245,10 @@ end $$;
 grant execute on function public.admin_approve_account(uuid, text, text[], uuid, boolean), public.admin_reject_account(uuid, text),
   public.admin_user_activity(uuid, integer), public.admin_activity_feed(integer, timestamptz, text, uuid), public.admin_accounts_overview(),
   public.admin_pending_students() to authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- Objetivo do aluno (2.2): respostas do primeiro acesso e meta de nota, guardadas nas preferências.
+alter table public.user_settings add column if not exists study_goal jsonb;
+alter table public.user_settings drop constraint if exists user_settings_study_goal_check;
+alter table public.user_settings add constraint user_settings_study_goal_check
+  check (study_goal is null or (jsonb_typeof(study_goal) = 'object' and pg_column_size(study_goal) <= 6000));
