@@ -16,6 +16,10 @@ import { MARANHAO, PREFEITURAS, INFORMATICA, CIDADES_PREFEITURAS, VIZINHOS, CIDA
 import EXATAS from './banco/exatas.mjs';
 import EXATAS2 from './banco/exatas2.mjs';
 import { rng, CIDADES } from './banco/util.mjs';
+import { FAMILIAS as EXATAS3 } from './provas/exatas3.mjs';
+import { TABELAS3 } from './provas/tabelas3.mjs';
+import { IMPERATRIZ_REGIAO, SAUDE, EDUCACAO_LEIS, SEGURANCA, ASSISTENCIA, ADMINISTRATIVO, CIDADES_IMPERATRIZ } from './provas/profissoes.mjs';
+import { createHash } from 'node:crypto';
 
 const root = new URL('..', import.meta.url);
 const P = rel => new URL(rel, root).pathname;
@@ -47,7 +51,9 @@ const NOVAS_MATERIAS = [
   { id: 17, area: 5, name: 'Conhecimentos do Maranhão', color: '#b91c1c' },
   { id: 18, area: 5, name: 'Informática', color: '#0369a1' },
   { id: 19, area: 5, name: 'Atendimento ao público', color: '#7c3aed' },
-  { id: 20, area: 5, name: 'Conhecimentos regionais', color: '#a16207' }
+  { id: 20, area: 5, name: 'Conhecimentos regionais', color: '#a16207' },
+  { id: 21, area: 5, name: 'Saúde pública (SUS)', color: '#059669' },
+  { id: 22, area: 5, name: 'Legislação educacional', color: '#4338ca' }
 ];
 const NOVAS_BANCAS = [
   { id: 60, name: 'Estilo concursos do Maranhão', kind: 'estilo' },
@@ -57,7 +63,8 @@ const NOVAS_BANCAS = [
   { id: 64, name: 'Estilo seletivo IFMA', kind: 'estilo' },
   { id: 65, name: 'Estilo concursos do Piauí', kind: 'estilo' },
   { id: 66, name: 'Estilo concursos do Pará', kind: 'estilo' },
-  { id: 67, name: 'Estilo concursos do Tocantins', kind: 'estilo' }
+  { id: 67, name: 'Estilo concursos do Tocantins', kind: 'estilo' },
+  { id: 68, name: 'Estilo concursos de Imperatriz e região', kind: 'estilo' }
 ];
 const subjects = [...cat.subjects.map(s => ({ id: s.id, name: s.name })), ...banco.subjects.map(s => ({ id: s.id, name: s.name })), ...NOVAS_MATERIAS];
 const topics = [...cat.topics.map(t => ({ id: t.id, subject: t.subject_id ?? t.subject, parent: t.parent_id ?? t.parent ?? null, name: t.name })), ...banco.topics.map(t => ({ id: t.id, subject: t.subject_id, parent: t.parent_id ?? null, name: t.name }))];
@@ -71,7 +78,7 @@ function topicId(subjectId, [pai, filho]) {
   if (!f) { f = { id: nextTopic++, subject: subjectId, parent: p.id, name: filho }; topics.push(f); novosTopicos.push(f); }
   return f.id;
 }
-const SIGLA = { 'Português': 'POR', 'Inglês': 'ING', 'Matemática': 'MAT', 'Raciocínio lógico': 'RLO', 'Biologia': 'BIO', 'Física': 'FIS', 'Química': 'QUI', 'História': 'HIS', 'Geografia': 'GEO', 'Direito': 'DIR', 'Literatura': 'LIT', 'Sociologia': 'SOC', 'Filosofia': 'FIL', 'Espanhol': 'ESP', 'Artes': 'ART', 'Educação Física': 'EDF', 'Conhecimentos do Maranhão': 'CMA', 'Informática': 'INF', 'Atendimento ao público': 'ATP', 'Conhecimentos regionais': 'REG' };
+const SIGLA = { 'Português': 'POR', 'Inglês': 'ING', 'Matemática': 'MAT', 'Raciocínio lógico': 'RLO', 'Biologia': 'BIO', 'Física': 'FIS', 'Química': 'QUI', 'História': 'HIS', 'Geografia': 'GEO', 'Direito': 'DIR', 'Literatura': 'LIT', 'Sociologia': 'SOC', 'Filosofia': 'FIL', 'Espanhol': 'ESP', 'Artes': 'ART', 'Educação Física': 'EDF', 'Conhecimentos do Maranhão': 'CMA', 'Informática': 'INF', 'Atendimento ao público': 'ATP', 'Conhecimentos regionais': 'REG', 'Saúde pública (SUS)': 'SUS', 'Legislação educacional': 'EDU' };
 
 // ---------------- 1) ENEM oficial ----------------
 const imagens = [];   // [origem, destino] para converter
@@ -123,7 +130,7 @@ for (const f of arquivos) {
 const vistos = new Set(banco.q.map(x => x[6]));
 const concursos = [];
 const contador = {};
-const NOME_BANCA = { 60: 'concursos do Maranhão', 61: 'concursos de prefeituras', 62: 'PAES/UEMA', 63: 'vestibular da UEMASUL', 64: 'seletivo do IFMA', 65: 'concursos do Piauí', 66: 'concursos do Pará', 67: 'concursos do Tocantins' };
+const NOME_BANCA = { 60: 'concursos do Maranhão', 61: 'concursos de prefeituras', 62: 'PAES/UEMA', 63: 'vestibular da UEMASUL', 64: 'seletivo do IFMA', 65: 'concursos do Piauí', 66: 'concursos do Pará', 67: 'concursos do Tocantins', 68: 'concursos de Imperatriz e região' };
 function gerar(familias, board, fator = 1, cidades = null, destino = concursos, nivel = null) {
   let semente = 20261128 + board * 1000;
   for (const fam of familias) {
@@ -163,15 +170,57 @@ for (const b of [65, 66, 67]) {
 }
 CIDADES.splice(0, CIDADES.length, ...CIDADES_PADRAO);
 
+// ---------------- 4) Ensino médio completo (2.3): conteúdos que faltavam e questões com figura ----------------
+// Todas AUTORAIS. A banca é só a referência de estilo (rodízio entre vestibulares), nunca uma prova oficial.
+const medio23 = [];
+const ESTILOS = [20, 20, 20, 20, 21, 22, 25, 26, 27, 28, 29, 33, 35, 36, 40, 39, 30, 31, 34, 41];
+const nomeEstilo = id => cat.boards.concat(banco.boards || []).find(b => b.id === id).name.replace(/^Estilo /, '');
+const DIR_FIG = P('conteudo/figuras/');
+if (existsSync(DIR_FIG)) rmSync(DIR_FIG, { recursive: true });
+mkdirSync(DIR_FIG, { recursive: true });
+let figuras = 0, giro = 0;
+function gerarMedio(familias) {
+  let semente = 20261128 + 230000;
+  for (const fam of familias) {
+    const s = sid(fam.subject), t = topicId(s, fam.topic);
+    const r = rng(semente++ * 7919);
+    const alvo = fam.n;
+    let feitas = 0;
+    for (let tent = 0; feitas < alvo && tent < alvo * 6; tent++) {
+      const q = fam.make(r, tent);
+      if (!q || /NaN|undefined|Infinity|\[object/.test(q.statement + q.explanation + q.options.join('|'))) continue;
+      if (q.options.length !== 5 || new Set(q.options).size !== 5) continue;
+      let statement = q.statement;
+      if (q.figura) {
+        const nome = createHash('sha1').update(q.figura).digest('hex').slice(0, 14);
+        statement = `![Figura da questão](conteudo/figuras/${nome}.svg)\n\n${statement}`;
+        if (vistos.has(statement)) continue;
+        writeFileSync(`${DIR_FIG}${nome}.svg`, q.figura); figuras++;
+      } else if (vistos.has(statement)) continue;
+      vistos.add(statement); feitas++;
+      const board = fam.level === 'enem' ? 20 : ESTILOS[giro++ % ESTILOS.length];
+      medio23.push({ subject: s, topic: t, level: fam.level, difficulty: fam.difficulty, theme: fam.topic[1], statement, explanation: q.explanation, hint: q.hint || null, options: q.options, correct: q.correct, board, year: 2026, source: `Questão autoral da Educa Mais. Referência de estilo: ${board === 20 ? 'ENEM' : nomeEstilo(board)}. Não é uma questão oficial.` });
+    }
+  }
+}
+gerarMedio([...EXATAS3, ...TABELAS3]);
+
+// ---------------- 5) Imperatriz e região, e concursos por profissão (2.3) ----------------
+const profissoes = [];
+gerar(IMPERATRIZ_REGIAO, 68, 1, null, profissoes);
+gerar([...SAUDE, ...EDUCACAO_LEIS, ...SEGURANCA, ...ASSISTENCIA, ...ADMINISTRATIVO], 68, 1, null, profissoes);
+gerar(exatas.filter(f => f.difficulty <= 3), 68, 0.08, CIDADES_IMPERATRIZ, profissoes);
+CIDADES.splice(0, CIDADES.length, ...CIDADES_PADRAO);
+
 // ---------------- Saídas ----------------
 const hex = (n, w) => n.toString(16).padStart(w, '0');
 const pid = n => `e2000000-0000-4000-a000-${hex(n, 12)}`;
 const poid = (n, p) => `e2000000-0000-4000-b000-${hex(n * 10 + p, 12)}`;
-const todas = [...enem, ...concursos, ...enemNovas, ...novas].map((q, i) => {
+const todas = [...enem, ...concursos, ...enemNovas, ...novas, ...medio23, ...profissoes].map((q, i) => {
   if (!q.code) { const sg = SIGLA[subjects.find(s => s.id === q.subject).name]; contador[sg] = (contador[sg] || 0) + 1; q.code = `CO-${sg}-${String(contador[sg]).padStart(5, '0')}`; }
   return { ...q, id: pid(i + 1), n: i + 1 };
 });
-const VERSAO = 2;
+const VERSAO = 3;
 const app = {
   versao: VERSAO,
   boards: NOVAS_BANCAS,
@@ -220,5 +269,5 @@ for (let p = 0; p < partes; p++) {
 
 const porMateria = {};
 for (const q of todas) { const n = subjects.find(s => s.id === q.subject).name; porMateria[n] = (porMateria[n] || 0) + 1; }
-console.log(`ok: ${enem.length} questões do ENEM (${puladas} puladas), ${concursos.length} de concursos, ${imagens.length} imagens, ${novosTopicos.length} conteúdos novos, ${partes} partes SQL`);
+console.log(`ok: ${enem.length} questões do ENEM (${puladas} puladas), ${concursos.length} de concursos, ${medio23.length} do ensino médio (${figuras} figuras), ${profissoes.length} de Imperatriz e profissões, ${imagens.length} imagens, ${novosTopicos.length} conteúdos novos, ${partes} partes SQL`);
 console.log(Object.entries(porMateria).map(([k, v]) => `  ${k}: ${v}`).join('\n'));

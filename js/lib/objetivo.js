@@ -5,6 +5,8 @@
 // Elas mudam a cada edição, por curso, campus, turno e cota. O aluno sempre pode digitar
 // a nota de corte real que encontrou no SISU ou no edital.
 
+import { VESTIBULARES_BR } from '../data/instituicoes.js';
+
 export const TIPOS = {
   enem: { nome: 'ENEM e faculdade (SISU, ProUni, Fies)', icone: '🎓', escala: 'enem' },
   vestibular: { nome: 'Vestibular próprio de uma universidade', icone: '🏛️', escala: 'pct' },
@@ -19,14 +21,14 @@ export const FACULDADES = [
   'UFT (Universidade Federal do Tocantins)', 'UFNT (Universidade Federal do Norte do Tocantins)', 'Faculdade particular (ProUni ou Fies)', 'Outra instituição'
 ];
 
+// Vestibulares próprios do Brasil inteiro (o Maranhão primeiro), em js/data/instituicoes.js.
+const _MA = ['paes-uema', 'uemasul', 'ifma'];
 export const VESTIBULARES = [
-  { id: 'paes-uema', nome: 'PAES/UEMA', banca: 'Estilo PAES/UEMA', detalhe: 'Processo seletivo próprio da UEMA' },
-  { id: 'uemasul', nome: 'Vestibular da UEMASUL', banca: 'Estilo vestibular UEMASUL', detalhe: 'Imperatriz, Açailândia e região tocantina' },
-  { id: 'ifma', nome: 'Seletivo do IFMA (cursos técnicos)', banca: 'Estilo seletivo IFMA', detalhe: 'Português e Matemática do ensino fundamental' },
-  { id: 'ufma', nome: 'UFMA (pelo ENEM e SISU)', banca: 'INEP (ENEM)', detalhe: 'A UFMA usa a nota do ENEM' },
-  { id: 'uespi', nome: 'UESPI', banca: 'Estilo UFPI', detalhe: 'Piauí' },
-  { id: 'unitins', nome: 'UNITINS', banca: 'Estilo UNITINS', detalhe: 'Tocantins' },
-  { id: 'outro', nome: 'Outro vestibular', banca: null, detalhe: '' }
+  ...VESTIBULARES_BR.filter(v => _MA.includes(v.id)),
+  { id: 'ufma', nome: 'UFMA (pelo ENEM e SISU)', uf: 'MA', banca: 'INEP (ENEM)', detalhe: 'A UFMA usa a nota do ENEM' },
+  { id: 'uespi', nome: 'UESPI', uf: 'PI', banca: 'Estilo UFPI', detalhe: 'Piauí' },
+  ...VESTIBULARES_BR.filter(v => !_MA.includes(v.id)),
+  { id: 'outro', nome: 'Outro vestibular', uf: null, banca: null, detalhe: '' }
 ];
 
 export const CONCURSOS = [
@@ -37,6 +39,10 @@ export const CONCURSOS = [
   { id: 'piaui', nome: 'Concursos do Piauí', banca: ['Estilo concursos do Piauí', 'Estilo concursos de prefeituras'], mats: ['Português', 'Raciocínio lógico', 'Conhecimentos regionais', 'Direito', 'Informática'] },
   { id: 'para', nome: 'Concursos do Pará', banca: ['Estilo concursos do Pará', 'Estilo concursos de prefeituras'], mats: ['Português', 'Raciocínio lógico', 'Conhecimentos regionais', 'Direito', 'Informática'] },
   { id: 'tocantins', nome: 'Concursos do Tocantins', banca: ['Estilo concursos do Tocantins', 'Estilo concursos de prefeituras'], mats: ['Português', 'Raciocínio lógico', 'Conhecimentos regionais', 'Direito', 'Informática'] },
+  { id: 'imperatriz', nome: 'Prefeitura de Imperatriz e cidades da região tocantina', banca: ['Estilo concursos de Imperatriz e região', 'Estilo concursos de prefeituras'], mats: ['Português', 'Raciocínio lógico', 'Conhecimentos do Maranhão', 'Direito', 'Informática', 'Atendimento ao público'] },
+  { id: 'saude', nome: 'Área da saúde (prefeituras, estado, hospitais)', banca: ['Estilo concursos de Imperatriz e região', 'Estilo concursos de prefeituras'], mats: ['Português', 'Saúde pública (SUS)', 'Raciocínio lógico', 'Informática', 'Atendimento ao público'] },
+  { id: 'educacao', nome: 'Área da educação (professor e apoio escolar)', banca: ['Estilo concursos de Imperatriz e região', 'Estilo concursos do Maranhão'], mats: ['Português', 'Legislação educacional', 'Raciocínio lógico', 'Informática', 'Conhecimentos do Maranhão'] },
+  { id: 'assistencia', nome: 'Assistência social (CRAS, CREAS)', banca: ['Estilo concursos de Imperatriz e região', 'Estilo concursos de prefeituras'], mats: ['Português', 'Direito', 'Raciocínio lógico', 'Atendimento ao público', 'Informática'] },
   { id: 'federal', nome: 'Concursos federais', banca: ['Cebraspe', 'FGV'], mats: ['Português', 'Raciocínio lógico', 'Direito', 'Informática'] },
   { id: 'outro', nome: 'Outro concurso', banca: [], mats: ['Português', 'Raciocínio lógico', 'Direito', 'Informática'] }
 ];
@@ -59,7 +65,7 @@ export const AREAS_ENEM = [
 ];
 
 export const MATERIAS_ESCOLHA = ['Português', 'Redação', 'Literatura', 'Inglês', 'Espanhol', 'Matemática', 'Física', 'Química', 'Biologia', 'História', 'Geografia',
-  'Filosofia', 'Sociologia', 'Raciocínio lógico', 'Direito', 'Informática', 'Conhecimentos do Maranhão', 'Conhecimentos regionais', 'Atendimento ao público'];
+  'Filosofia', 'Sociologia', 'Raciocínio lógico', 'Direito', 'Informática', 'Conhecimentos do Maranhão', 'Conhecimentos regionais', 'Atendimento ao público', 'Saúde pública (SUS)', 'Legislação educacional'];
 
 export const DIFICULDADES_GERAIS = ['Falta de tempo', 'Concentração', 'Ansiedade na prova', 'Interpretação de texto', 'Contas e cálculos', 'Decorar conteúdo', 'Organizar os estudos', 'Terminar a prova no tempo'];
 

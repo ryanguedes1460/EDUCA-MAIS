@@ -73,7 +73,7 @@ Na versão 1.2 a rotina de backup do repositório (`backup.yml`) e o "baixar/res
 No SQL Editor do projeto novo, rode nesta ordem:
 1. `supabase/instalar.sql` (todas as tabelas, regras e funções).
 2. `supabase/banco-de-questoes/parte-01.sql` até `parte-14.sql` (as 13.088 questões, cerca de 1 MB cada; cada parte pode ser rodada de novo sem duplicar).
-3. Para a 2.1/2.2: `supabase/banco-de-questoes/provas-01.sql` até `provas-12.sql` (ENEM oficial e concursos). Num projeto que já existia, rode antes as migrações `20261128001200_catalogo_provas.sql` e `20261128001300_contas_atividade.sql`.
+3. Para a 2.1 a 2.3: `supabase/banco-de-questoes/provas-01.sql` até `provas-17.sql` (ENEM oficial, concursos, vestibulares e ensino médio). Num projeto que já existia, rode antes as migrações `20261128001200_catalogo_provas.sql` e `20261128001300_contas_atividade.sql`.
 4. `select public.bootstrap_admin('SEU-EMAIL', 'Ryan');` depois de criar a sua conta pelo site.
 
 Contas novas entram **aguardando liberação** (configuração `liberacao_manual`). Para desligar: `update public.app_settings set value = 'false'::jsonb where key = 'liberacao_manual';`

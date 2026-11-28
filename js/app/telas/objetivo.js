@@ -7,7 +7,8 @@ import { catalog } from '../../core/conteudo.js';
 import { accuracy } from '../../lib/stats.js';
 import { montarCronograma } from '../../lib/cronograma.js';
 import { registrar } from '../../core/atividade.js';
-import { TIPOS, FACULDADES, VESTIBULARES, CONCURSOS, CORTES_ENEM, corteSugerido, AREAS_ENEM, MATERIAS_ESCOLHA, DIFICULDADES_GERAIS, normalizar, montarPlano, editalDoPlano } from '../../lib/objetivo.js';
+import { UFS, UNIVERSIDADES, nomeInstituicao } from '../../data/instituicoes.js';
+import { TIPOS, VESTIBULARES, CONCURSOS, CORTES_ENEM, corteSugerido, AREAS_ENEM, MATERIAS_ESCOLHA, DIFICULDADES_GERAIS, normalizar, montarPlano, editalDoPlano } from '../../lib/objetivo.js';
 
 export const objetivoSalvo = () => aparencia.settings().study_goal || null;
 export const PULOU = 'em:objetivo-depois';
@@ -24,6 +25,10 @@ function Chips({ itens, sel, onChange, max = 12 }) {
 function Assistente({ inicial, onFim }) {
   const [o, setO] = useState(() => ({ tipo: '', dificuldades: [], outras: [], notas: {}, horas_semana: 10, ...(inicial || {}) }));
   const [passo, setPasso] = useState(inicial ? 1 : 0);
+  const [uf, setUf] = useState(() => Object.keys(UNIVERSIDADES).find(k => UNIVERSIDADES[k].some(u => nomeInstituicao(u) === inicial?.instituicao)) || 'MA');
+  const insts = [...UNIVERSIDADES[uf].map(u => nomeInstituicao(u)), 'Faculdade particular (ProUni ou Fies)', 'Outra instituição'];
+  if (o.instituicao && !insts.includes(o.instituicao)) insts.unshift(o.instituicao);
+  const vest = VESTIBULARES.find(v => v.nome === o.prova);
   const set = (k, v) => setO(x => ({ ...x, [k]: v }));
   const esc = TIPOS[o.tipo]?.escala || 'enem';
   const PASSOS = ['Objetivo', 'Prova', 'Dificuldades', 'Já fez a prova?', 'Meta'];
@@ -51,11 +56,15 @@ function Assistente({ inicial, onFim }) {
 
     ${passo === 1 && html`<section class="card pad col" style="gap:12px">
       ${o.tipo === 'enem' && html`
-        <${Field} label="Faculdade que você quer (opcional)"><${Select} value=${o.instituicao || ''} onChange=${v => set('instituicao', v)} all="Ainda não sei" options=${FACULDADES.map(f => [f, f])} /></${Field}>
+        <div class="grid g2"><${Field} label="Estado da faculdade"><${Select} value=${uf} onChange=${setUf} all=${null} options=${Object.entries(UFS).map(([k, n]) => [k, n])} /></${Field}>
+        <${Field} label="Faculdade que você quer (opcional)"><${Select} value=${o.instituicao || ''} onChange=${v => set('instituicao', v)} all="Ainda não sei" options=${insts.map(f => [f, f])} /></${Field}></div>
         <${Field} label="Curso (opcional)" hint="Usamos o curso para sugerir uma nota de corte de referência."><${Select} value=${o.curso || ''} onChange=${v => set('curso', v)} all="Ainda não sei" options=${CORTES_ENEM.map(([c]) => [c, c])} /></${Field}>
         <${Field} label="Ano em que vai fazer o ENEM"><${Select} value=${o.prova || ''} onChange=${v => set('prova', v)} all="Escolher" options=${[0, 1, 2].map(i => new Date().getFullYear() + i).map(y => ['ENEM ' + y, 'ENEM ' + y])} /></${Field}>`}
       ${o.tipo === 'vestibular' && html`
-        <${Grupo} label="Qual vestibular? (opcional)"><div class="col" style="gap:6px">${VESTIBULARES.map(v => html`<label class="pick"><input type="radio" name="vest" checked=${o.prova === v.nome} onChange=${() => set('prova', v.nome)} /><span><b>${v.nome}</b>${v.detalhe && html`<br /><span class="small muted">${v.detalhe}</span>`}</span></label>`)}</div></${Grupo}>
+        <${Field} label="Qual vestibular? (opcional)" hint="Tem vestibulares do Brasil todo. Confira sempre o edital do ano: a forma de ingresso pode mudar.">
+          <select class="input" value=${o.prova || ''} onChange=${e => set('prova', e.target.value)}><option value="">Ainda não sei</option>
+            ${[...new Set(VESTIBULARES.map(v => v.uf || ''))].map(u => html`<optgroup label=${u ? UFS[u] : 'Outros'}>${VESTIBULARES.filter(v => (v.uf || '') === u).map(v => html`<option value=${v.nome} selected=${o.prova === v.nome}>${v.nome}</option>`)}</optgroup>`)}</select></${Field}>
+        ${vest?.detalhe && html`<p class="small muted" style="margin:-4px 0 0">ℹ️ ${vest.detalhe}${vest.banca && vest.banca !== 'INEP (ENEM)' ? '. Para treinar, use as questões autorais no estilo dessa prova.' : ''}</p>`}
         <${Field} label="Curso (opcional)"><input class="input" maxlength="80" value=${o.curso || ''} onInput=${e => set('curso', e.target.value)} placeholder="Ex.: Enfermagem" /></${Field}>`}
       ${o.tipo === 'concurso' && html`
         <${Grupo} label="Qual concurso? (opcional)"><div class="col" style="gap:6px">${CONCURSOS.map(c => html`<label class="pick"><input type="radio" name="conc" checked=${o.prova === c.nome} onChange=${() => set('prova', c.nome)} /><span>${c.nome}</span></label>`)}</div></${Grupo}>

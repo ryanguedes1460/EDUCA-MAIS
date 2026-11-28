@@ -52,7 +52,7 @@ export default function Estudar() {
   return html`<div class="col fade-in" style="gap:22px">
     <${PageHead} eyebrow="Trilhas de estudo" title="Estudar" actions=${html`<input class="input" style="width:240px" placeholder="Buscar matéria" value=${q} onInput=${e => setQ(e.target.value)} />`}>Escolha uma matéria para ver as aulas, os conteúdos e o seu acerto em cada um.</${PageHead}>
     <div class="grid feature-grid">
-      ${[['🎬', 'Aulas', auth.isLogged() ? `${d.aulas.length} aulas liberadas` : 'Entre na conta para ver', 'aulas'], ['📝', 'Anotações', 'Seu caderno digital com busca', 'anotacoes'], ['✍️', 'Redação', 'Temas e folha com cronômetro', 'redacao'], ['📄', 'Materiais', 'PDFs da professora', 'materiais'], ['💬', 'Falar com a professora', 'Tire suas dúvidas', 'duvidas']]
+      ${[['🧠', 'Resumos e mapas mentais', 'Ensino médio completo, do que mais cai ao resto', 'trilhas'], ['🎬', 'Aulas', auth.isLogged() ? `${d.aulas.length} aulas liberadas` : 'Entre na conta para ver', 'aulas'], ['📝', 'Anotações', 'Seu caderno digital com busca', 'anotacoes'], ['✍️', 'Redação', 'Temas e folha com cronômetro', 'redacao'], ['📄', 'Materiais', 'PDFs da professora', 'materiais'], ['💬', 'Falar com a professora', 'Tire suas dúvidas', 'duvidas']]
         .map(([ic, a, b, v]) => html`<button class="card feature" onClick=${() => go(v)}><div class="ic">${ic}</div><div><div class="bold">${a}</div><div class="small muted">${b}</div></div></button>`)}
     </div>
     ${areas.map(ar => { const ss = subs.filter(s => ar.id == null || s.area_id === ar.id); return ss.length > 0 && html`<section><h2 class="mb">${ar.name}</h2><div class="grid tables-grid">${ss.map(card)}</div></section>`; })}

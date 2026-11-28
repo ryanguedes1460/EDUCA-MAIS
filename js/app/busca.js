@@ -7,6 +7,8 @@ import * as auth from '../core/auth.js';
 
 const TELAS = [
   ['objetivo', '🎯', 'Meu objetivo', 'nota de corte, prova, plano para passar, vestibular, concurso'],
+  ['trilhas', '🧠', 'Trilhas, resumos e mapas mentais', 'ensino médio completo, revisão, conteúdos que mais caem'],
+  ['provas', '🏛️', 'Provas e bancas', 'ENEM oficial, vestibulares, concursos de Imperatriz, saúde, educação'],
   ['inicio', '🏠', 'Início', 'painel do dia, missões, nível'], ['estudar', '📚', 'Estudar', 'trilhas por matéria'], ['aulas', '🎬', 'Aulas', 'videoaulas liberadas'],
   ['praticar', '🎯', 'Praticar', 'modos de treino'], ['questoes', '✏️', 'Banco de questões', 'filtros por prova, matéria, dificuldade'], ['desafio', '🔥', 'Desafio do dia', '5 questões novas todo dia'],
   ['erros', '🩹', 'Caderno de erros', 'refazer o que errou'], ['flashcards', '🃏', 'Flashcards', 'revisão espaçada'], ['foco', '⏱️', 'Sala de foco', 'pomodoro, sons, meta'],
@@ -22,7 +24,7 @@ export function Busca({ onClose }) {
   const inp = useRef(null);
   useEffect(() => {
     inp.current?.focus();
-    Promise.all([catalog(), store.all('notes'), store.meta.get('aulas:lista', [])]).then(([cat, notes, aulas]) => setDados({ cat, notes, aulas })).catch(() => setDados({ cat: null, notes: [], aulas: [] }));
+    Promise.all([catalog(), store.all('notes'), store.meta.get('aulas:lista', []), import('../data/resumos.js').then(m => m.RESUMOS).catch(() => [])]).then(([cat, notes, aulas, resumos]) => setDados({ cat, notes, aulas, resumos })).catch(() => setDados({ cat: null, notes: [], aulas: [], resumos: [] }));
   }, []);
   const extra = [];
   if (auth.can('teacher.area')) extra.push(['professor', '🧑‍🏫', 'Área do professor', 'banco próprio, turmas, listas']);
@@ -37,6 +39,8 @@ export function Busca({ onClose }) {
       const { cat } = dados;
       const subs = cat.subjects.filter(s => norm(s.name).includes(t)).slice(0, 4).map(s => ({ ic: subjectIcon(s.name), n: s.name, d: 'praticar questões desta matéria', run: () => go('questoes', 'materia', s.id) }));
       if (subs.length) groups.push(['Matérias', subs]);
+      const res = (dados.resumos || []).filter(r => norm(r.titulo + ' ' + r.ideia).includes(t)).slice(0, 4).map(r => ({ ic: '🧠', n: r.titulo, d: 'resumo e mapa mental', run: () => go('resumo', r.id) }));
+      if (res.length) groups.push(['Resumos', res]);
       const tops = cat.topics.filter(x => norm(x.name).includes(t)).slice(0, 4).map(x => ({ ic: '🔖', n: x.name, d: cat.subject(x.subject_id)?.name || 'conteúdo', run: () => go('questoes', 'conteudo', x.id) }));
       if (tops.length) groups.push(['Conteúdos', tops]);
       if (t.length >= 3) {

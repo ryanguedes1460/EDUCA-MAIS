@@ -17,7 +17,7 @@ import * as atividade from './core/atividade.js';
 import { startWorlds, applyWorld, WORLDS, worldOf, setWorld } from './app/mundos.js';
 import { Busca } from './app/busca.js';
 
-export const VERSION = '2.2.0-dev';
+export const VERSION = '2.3.0-dev';
 
 // ---------------- Telas ----------------
 // feature = parte que a professora pode liberar ou bloquear para cada aluno (js/core/controles.js)
@@ -47,6 +47,9 @@ export const VIEWS = {
   professor: { legacy: L('professor'), title: 'Área do professor', needs: 'teacher.area' },
   ferramentas: { load: T('ferramentas'), title: 'Ferramentas do professor' },
   objetivo: { load: T('objetivo'), title: 'Meu objetivo' },
+  trilhas: { load: T('trilhas'), title: 'Trilhas e resumos' },
+  provas: { load: T('provas'), title: 'Provas e bancas', feature: 'questoes' },
+  resumo: { load: T('trilhas'), title: 'Resumo', props: { modo: 'resumo' } },
   admin: { legacy: L('admin'), title: 'Painel da professora', needs: 'admin.access' }
 };
 // Endereços da versão anterior continuam funcionando

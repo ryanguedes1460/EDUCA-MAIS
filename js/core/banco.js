@@ -1,6 +1,6 @@
 // Banco de questões grande, em dois arquivos compactos:
 //   conteudo/banco.json   milhares de questões autorais (ids e1000000-…)
-//   conteudo/provas.json  questões oficiais do ENEM 2009–2023 e autorais de concursos (ids e2000000-…)
+//   conteudo/provas.json  questões oficiais do ENEM 2009–2025, autorais de concursos, vestibulares e do ensino médio (ids e2000000-…)
 // Usado por quem estuda sem conta e como reserva offline.
 // Aqui eles viram o mesmo formato das questões do banco de dados, com os mesmos ids.
 const hex = (n, w) => n.toString(16).padStart(w, '0');
@@ -8,7 +8,7 @@ export const bid = n => `e1000000-0000-4000-a000-${hex(n, 12)}`;
 export const boid = (n, p) => `e1000000-0000-4000-b000-${hex(n * 10 + p, 12)}`;
 export const pid = n => `e2000000-0000-4000-a000-${hex(n, 12)}`;
 export const poid = (n, p) => `e2000000-0000-4000-b000-${hex(n * 10 + p, 12)}`;
-export const VERSAO = 4;
+export const VERSAO = 5;
 // As questões dos arquivos têm, no banco de dados, data até esta e ids nesta faixa:
 // quem já tem os arquivos no aparelho só precisa baixar do servidor o que mudou depois.
 export const DATA = '2026-11-28T00:00:00.000Z';

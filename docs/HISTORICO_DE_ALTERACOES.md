@@ -1,5 +1,17 @@
 # Histórico de alterações
 
+## 2.3.0 (em desenvolvimento, branch do PR #3)
+**Novo**
+- **Ensino médio completo**: 2.420 questões autorais novas dos conteúdos que faltavam, como gravitação (272 questões: lei de Newton, gravidade em altitude, Kepler, satélites, peso em outros astros), MHS, ondas sonoras, hidrostática, termodinâmica, óptica, eletrostática, magnetismo, termoquímica, cinética, equilíbrio, eletroquímica, radioatividade, nomenclatura orgânica, genética (2ª lei de Mendel, herança ligada ao X), trigonometria, geometria espacial, combinatória, e tabelas de conceitos de Biologia, Química, História, Geografia, Filosofia, Sociologia e Português.
+- **Questões com figura**: 470 questões com gráficos (posição e velocidade, barras, setores, função afim), triângulos, circuitos e pontos no plano. As figuras são desenhadas pelo próprio gerador a partir dos números da questão (`conteudo/figuras/*.svg`), com fundo branco para ler no tema escuro.
+- **Trilhas, resumos e mapas mentais** (`#trilhas`): mapa de conteúdos do ensino médio com 568 módulos (a partir dos nomes dos módulos das apostilas), cada um com a prioridade para a prova (cai muito, com frequência, às vezes), 101 resumos autorais e um mapa mental desenhado a partir de cada resumo. Cada resumo leva às questões do conteúdo e pode ser marcado como revisado.
+- **Provas e bancas** (`#provas`): ENEM, vestibulares e concursos separados, cada prova com as suas questões.
+- **Selos de origem** em cada questão: "Questão oficial" ou "Autoral · referência de estilo: [prova]". Nas oficiais do ENEM, a referência traz a fonte INEP/MEC, o aviso de que a Educa Mais não tem vínculo com o INEP/MEC e o link para as provas e gabaritos oficiais.
+- **Meu objetivo**: universidades públicas de todos os estados e 24 vestibulares próprios do Brasil (FUVEST, Unicamp, Unesp, ITA, IME, UERJ, UnB, UFPR, UFRGS, UFSC, UECE, UEA e outros), além dos do Maranhão. Novos concursos: Prefeitura de Imperatriz e região tocantina, saúde, educação e assistência social.
+- **Concursos de Imperatriz e região e por profissão**: 287 questões autorais (Imperatriz e região tocantina, SUS e Leis 8.080 e 8.142, LDB, BNCC, PNE e ECA, segurança pública no art. 144, LOAS e SUAS, poderes e atos administrativos, matemática com cidades da região). Novas matérias: Saúde pública (SUS) e Legislação educacional.
+- Página inicial com "Escolha sua jornada" (ENEM, vestibulares, concursos e revisão rápida).
+- Total no banco: 21.512 questões.
+
 ## 2.2.0 (em desenvolvimento, branch do PR #3)
 **Novo**
 - **Meu objetivo** (primeiro acesso): a pessoa escolhe o objetivo (ENEM e faculdade, vestibular, concurso ou escola), a prova, a faculdade e o curso (opcionais), as dificuldades, quantas horas estuda por semana, se já fez a prova e quais notas tirou, e a meta. O app monta um plano: quanto falta para a nota de corte, quanto subir por semana, onde ganhar mais pontos, horas por matéria, passo a passo e o cronograma automático. "Responder depois" adia por 3 dias. As notas de corte sugeridas são referências aproximadas e o aviso aparece na tela.

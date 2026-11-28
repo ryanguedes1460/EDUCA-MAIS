@@ -1,4 +1,4 @@
--- Educa Mais · provas (ENEM oficial e concursos), parte 11 de 12 (gerado por scripts/gerar-provas.mjs)
+-- Educa Mais · provas (ENEM oficial e concursos), parte 11 de 17 (gerado por scripts/gerar-provas.mjs)
 -- Cole no Supabase > SQL Editor e clique em Run. Pode rodar de novo sem duplicar nada.
 begin;
 insert into public.questions (id, code, subject_id, topic_id, level, difficulty, board_id, year, qtype, theme, statement, explanation, hint, source, status, updated_at) values

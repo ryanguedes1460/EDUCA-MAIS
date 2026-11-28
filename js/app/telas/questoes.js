@@ -16,12 +16,20 @@ const PAGE = 20;
 const EMPTY = { origem: '', area: '', subject: '', topic: '', level: '', difficulty: '', board: '', year: '', qtype: '', situacao: '', q: '' };
 /** Questão de prova oficial (ENEM aplicado pelo INEP), com referência real. */
 export const oficial = q => /Prova oficial/.test(q.source || '');
-/** Referência curta: "ENEM 2019 · 2º dia · Questão 129" ou "Autoral · estilo UEMA". */
+/** Referência curta: "ENEM 2019 · 2º dia · Questão 129" ou "Autoral Educa Mais · referência de estilo: UEMA". */
 export function referencia(q, cat) {
   if (oficial(q)) return q.source.split(' · ').slice(0, 3).join(' · ');
   const b = cat.board(q.board_id)?.name || '';
-  return 'Autoral Educa Mais' + (/^Estilo /.test(b) ? ' · estilo ' + b.slice(7) : '');
+  return 'Autoral Educa Mais' + (/^Estilo /.test(b) ? ' · referência de estilo: ' + b.slice(7) : '');
 }
+/** Selo de origem (guia de uso de provas): oficial × autoral com referência de estilo. */
+export function Selo({ q, cat }) {
+  if (oficial(q)) return html`<span class="chip ok selo" title="Questão de prova oficial, com o texto original">✅ Questão oficial</span>`;
+  const b = cat.board(q.board_id)?.name || '';
+  const estilo = /^Estilo /.test(b) ? b.slice(7) : null;
+  return html`<span class="chip selo" title="Questão escrita pela Educa Mais. Não é de prova oficial.">✍️ Autoral${estilo ? ` · referência de estilo: ${estilo}` : ''}</span>`;
+}
+const LINK_INEP = 'https://www.gov.br/inep/pt-br/areas-de-atuacao/avaliacao-e-exames-educacionais/enem/provas-e-gabaritos';
 /** Quadro "Referência da questão": prova, ano, número, matéria e conteúdo. */
 export function RefBox({ q, cat }) {
   const s = cat.subject(q.subject_id), t = cat.topic(q.topic_id), pai = t?.parent_id ? cat.topic(t.parent_id) : null;
@@ -36,7 +44,8 @@ export function RefBox({ q, cat }) {
   ].filter(([, v]) => v);
   return html`<details class="ref-box mt"><summary>📌 Referência da questão <span class="muted">· ${referencia(q, cat)}</span></summary>
     <dl>${linhas.map(([k, v]) => html`<dt>${k}</dt><dd>${v}</dd>`)}</dl>
-    <p class="tiny faint">${q.source}${of ? ' Matéria e conteúdo foram classificados automaticamente.' : ''}</p></details>`;
+    ${of && /^ENEM/.test(q.source) ? html`<p class="tiny faint">Fonte: INEP/MEC · ${q.source.split(' · ').slice(0, 3).join(', ')}. Texto reproduzido sem alterações; o número da questão pode variar conforme a cor do caderno. A Educa Mais é uma plataforma independente, sem vínculo ou endosso do INEP/MEC. <a href=${LINK_INEP} target="_blank" rel="noopener">Provas e gabaritos oficiais</a>. Matéria e conteúdo foram classificados automaticamente.</p>`
+      : html`<p class="tiny faint">${q.source}</p>`}</details>`;
 }
 let lastFilters = { ...EMPTY };
 const LETRAS = 'ABCDEF';
@@ -201,7 +210,7 @@ function Resolver({ run, setRun, cat, onFinish, onQuit }) {
     document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k);
   });
   const toggleFav = async () => { const cur = await store.get('favorites', q.id); if (fav) await store.remove('favorites', q.id); else await store.put('favorites', { ...(cur || {}), id: q.id, deleted_at: null }); setFav(!fav); };
-  const s = cat.subject(q.subject_id), tp = cat.topic(q.topic_id), b = cat.board(q.board_id);
+  const s = cat.subject(q.subject_id), tp = cat.topic(q.topic_id);
   const label = { pratica: 'Prática', simulado: 'Simulado', desafio: 'Desafio do dia', revisao: 'Caderno de erros' }[run.mode] || 'Prática';
   const right = q.options.find(o => o.is_correct);
   const nRespondidas = exam ? run.chosen.filter(Boolean).length : run.res.filter(x => x !== undefined).length;
@@ -214,7 +223,7 @@ function Resolver({ run, setRun, cat, onFinish, onQuit }) {
     </div>
     ${run.qs.length <= 90 && html`<div class="dots" aria-label="Questões">${run.qs.map((_, i) => html`<button class=${[i === run.i ? 'cur' : '', exam ? (run.chosen[i] ? 'ans' : '') : run.res[i] === true ? 'ok' : run.res[i] === false ? 'no' : ''].join(' ')} onClick=${() => (exam || run.res[i] !== undefined || i <= run.res.length) && setRun({ ...run, i })}>${i + 1}</button>`)}</div>`}
     <article class="card pad-lg">
-      <div class="row between top"><div class="q-meta"><span class="chip accent">${subjectIcon(s?.name)} ${s?.name || ''}</span>${tp && html`<span class="chip">${tp.name}</span>`}<span class="chip">${DIFFICULTY[q.difficulty]}</span>${b && html`<span class="chip">${b.name}</span>`}</div>
+      <div class="row between top"><div class="q-meta"><span class="chip accent">${subjectIcon(s?.name)} ${s?.name || ''}</span>${tp && html`<span class="chip">${tp.name}</span>`}<span class="chip">${DIFFICULTY[q.difficulty]}</span><${Selo} q=${q} cat=${cat} /></div>
         <button class=${'star' + (fav ? ' on' : '')} aria-pressed=${fav} aria-label="Favoritar" onClick=${toggleFav}>${fav ? '★' : '☆'}</button></div>
       ${oficial(q) && html`<p class="q-ref">📌 ${referencia(q, cat)}</p>`}
       <div class="q-text" id="qText" dangerouslySetInnerHTML=${{ __html: richText(q.statement) }}></div>

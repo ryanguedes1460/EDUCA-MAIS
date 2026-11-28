@@ -78,6 +78,18 @@ export default function Inicio() {
       </div>
     </section>
 
+    <section>
+      <h2 class="mb">Escolha sua jornada</h2>
+      <div class="grid jornada-grid">
+        ${[
+          ['🎓', 'ENEM e ensino médio', 'Trilhas das 10 matérias, resumos, mapas mentais e questões oficiais do ENEM', '#6d28d9', () => go('trilhas')],
+          ['🏛️', 'Vestibulares', 'FUVEST, Unicamp, UERJ, UnB, PAES/UEMA, UEMASUL e mais, no estilo de cada prova', '#0e7c86', () => go('provas', 'vestibulares')],
+          ['🏢', 'Concursos', 'Imperatriz e região, Maranhão, estados vizinhos, saúde, educação e segurança', '#b7791f', () => go('provas', 'concursos')],
+          ['🧠', 'Revisão rápida', 'Os conteúdos que mais caem, em resumos e mapas mentais', '#c2362f', () => go('trilhas')]
+        ].map(([ic, t, desc, cor, fn]) => html`<button class="card jornada" style=${{ '--c': cor }} onClick=${fn}><span class="emo">${ic}</span><b>${t}</b><span class="small">${desc}</span></button>`)}
+      </div>
+    </section>
+
     <div class="home-grid">
       <section class="card pad">
         <div class="row between mb"><h2>Missões de hoje</h2><span class="chip accent num">${feitas}/${ms.length}</span></div>
@@ -105,6 +117,8 @@ export default function Inicio() {
       <h2 class="mb">Tudo num lugar só</h2>
       <div class="grid feature-grid">
         ${[
+          ['🧠', 'Trilhas e mapas mentais', 'Ensino médio completo, com o que mais cai em cada prova', 'trilhas'],
+          ['🏛️', 'Provas e bancas', 'ENEM oficial, vestibulares e concursos, separados por prova', 'provas'],
           ['✏️', 'Banco de questões', `${d.cat.bank.length.toLocaleString('pt-BR')} questões em ${d.cat.boards.length} estilos de prova`, 'questoes'],
           ['📝', 'Simulados com nota TRI', 'Cronometrados, com nota estimada como no ENEM', 'praticar'],
           ['🃏', 'Flashcards inteligentes', 'Cada erro vira cartão e volta na hora certa', 'flashcards'],

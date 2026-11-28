@@ -255,3 +255,59 @@ describe('objetivo e nota de corte', () => {
     assert.equal(corteSugerido('Medicina') > corteSugerido('Pedagogia'), true);
   });
 });
+
+// ---------------- 2.3: ensino médio completo, figuras, resumos e selos ----------------
+import { RESUMOS, DISCIPLINAS } from '../../js/data/resumos.js';
+import { CURRICULO } from '../../js/data/curriculo.js';
+import { richText } from '../../js/core/util.js';
+import { existsSync } from 'node:fs';
+
+describe('versão 2.3: conteúdo do ensino médio', () => {
+  const provas = JSON.parse(rfs(new URL('../../conteudo/provas.json', import.meta.url)));
+  test('toda figura citada num enunciado existe e é um SVG com fundo branco', () => {
+    const figs = new Set();
+    for (const q of provas.q) for (const m of q[6].matchAll(/\(conteudo\/figuras\/([a-f0-9]{14})\.svg\)/g)) figs.add(m[1]);
+    assert.ok(figs.size >= 300, 'poucas figuras: ' + figs.size);
+    for (const f of figs) {
+      const p = new URL(`../../conteudo/figuras/${f}.svg`, import.meta.url);
+      assert.ok(existsSync(p), 'falta ' + f);
+      assert.match(rfs(p, 'utf8'), /^<svg [^>]*><rect [^>]*fill="#fff"\/>/);
+    }
+  });
+  test('o texto da questão mostra figuras autorais e recusa outros caminhos', () => {
+    assert.match(richText('![Figura](conteudo/figuras/0123456789abcd.svg)'), /<img class="q-img"[^>]+src="conteudo\/figuras\/0123456789abcd\.svg"/);
+    assert.doesNotMatch(richText('![x](https://site.com/a.svg)'), /<img/);
+    assert.doesNotMatch(richText('![x](conteudo/figuras/../../x.svg)'), /<img/);
+  });
+  test('tem gravitação e os conteúdos novos, e nenhuma autoral finge ser oficial', () => {
+    const temas = new Set(provas.q.map(q => q[5]));
+    for (const t of ['Lei da Gravitação Universal', 'Leis de Kepler', 'Movimento harmônico simples (MHS)', 'Pilhas e diferença de potencial', 'Segunda lei de Mendel', 'Princípios e diretrizes do SUS', 'Imperatriz e região tocantina'])
+      assert.ok(temas.has(t), 'falta ' + t);
+    assert.ok(provas.q.filter(q => /Gravit|Kepler|orbital|astros|altitude/.test(q[5])).length >= 200);
+    for (const q of provas.q) if (q[11] !== 2) {
+      assert.doesNotMatch(q[13], /Prova oficial/, q[0]);
+      assert.match(q[13], /Não é uma questão oficial|Autoral|autoral/i, q[0]);
+    }
+  });
+  test('resumos: ids únicos, matérias conhecidas e ao menos três tópicos', () => {
+    const ids = new Set(RESUMOS.map(r => r.id));
+    assert.equal(ids.size, RESUMOS.length);
+    assert.ok(RESUMOS.length >= 100);
+    for (const r of RESUMOS) {
+      assert.ok(DISCIPLINAS.some(d => d.id === r.disc), r.id);
+      assert.ok([1, 2, 3].includes(r.prioridade), r.id);
+      assert.ok(r.ramos.length >= 1 && r.ramos.every(([t, i]) => t && i.length), r.id);
+      assert.ok(r.ideia && r.cai && r.busca, r.id);
+    }
+    assert.ok(RESUMOS.some(r => r.id === 'fis-gravitacao'));
+  });
+  test('mapa de conteúdos liga cada módulo a um resumo que existe', () => {
+    const ids = new Set(RESUMOS.map(r => r.id));
+    let n = 0;
+    for (const [d, mods] of Object.entries(CURRICULO)) for (const [nome, p, rid] of mods) {
+      n++; assert.ok(nome && [1, 2, 3].includes(p), d + ' ' + nome);
+      if (rid) assert.ok(ids.has(rid), `${d}: ${nome} → ${rid}`);
+    }
+    assert.ok(n >= 500);
+  });
+});
